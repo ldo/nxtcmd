@@ -8,6 +8,7 @@
 from __future__ import \
 	division, \
 	with_statement
+import math
 import sys
 import time
 import struct
@@ -44,6 +45,35 @@ def get_bool(boolstr, default) :
 	#end if
 	return result
 #end get_bool
+
+def make_note_converter(opts) :
+	"""returns a note-converter function which interprets a note spec
+	as a frequency or a note number, depending on opts. The options which
+	may be present are:
+
+		--notes
+			if present, then interpret the frequency spec as a MIDI note
+			number (semitone steps with 60 = middle C). Fractions are allowed,
+			but the computed frequency is always an integer.
+			If absent, then interpret the frequency spec as integer Hz.
+		--tune=notenr:freq
+			specifies the tuning for note numbers, as a reference note number
+			and the corresponding reference frequency. If omitted, the default is
+			69:440 (A above middle C = 440Hz, also known as Concert Pitch).
+
+	"""
+	if opts.has_key("notes") :
+		refnote, reffreq = opts.get("tune", "69:440").split(":", 1)
+		refnote = float(refnote)
+		reffreq = float(reffreq)
+		def notefn(note) :
+			return int(round(2 ** ((float(note) - refnote) / 12) * reffreq))
+		#end notefn
+	else :
+		notefn = int # straight frequency
+	#end if
+	return notefn
+#end make_note_converter
 
 #+
 # Globals
@@ -204,26 +234,31 @@ def cmd_playtones(args, opts) :
 	if len(args) % 2 != 0 :
 		raise getopt.GetoptError("need an even number of args")
 	#end if
+	notefn = make_note_converter(opts)
 	while len(args) > 0 :
 		freq, dur = args[:2]
 		args = args[2:]
-		brick.play_tone(int(freq), int(dur))
+		brick.play_tone(notefn(freq), int(dur))
 		time.sleep(int(dur) / 1000) # wait for tone to finish before next
 	#end while
 #end cmd_playtones
 
 def cmd_tonesfile(args, opts) :
-	"""encodes a sequence of tones into an .rmd file and writes it to standard output."""
+	"""encodes a sequence of tones into a melody file and writes it to standard output.
+	Various websites describe this as an .rmd file, but the NXT on-board interface
+	will not show it to the user as a sound file unless it has an .rso extension.
+	Of course, programmatic commands can access it and play it regardless."""
 	if len(args) % 2 != 0 :
 		raise getopt.GetoptError("need an even number of args")
 	#end if
+	notefn = make_note_converter(opts)
 	data = ""
 	while len(args) > 0 :
 		freq, dur = args[:2]
 		args = args[2:]
-		data += struct.pack(">HH", int(freq), int(dur))
+		data += struct.pack(">HH", notefn(freq), int(dur))
 	#end while
-	sys.stdout.write(struct.pack(">HHHH", 0x0600, len(data), 0, 0))
+	sys.stdout.write(struct.pack(">BBHHH", 6, 0, len(data), 0, 0))
 	sys.stdout.write(data)
 #end cmd_tonesfile
 
@@ -408,7 +443,7 @@ recognized_commands = \
 	"tones" :
 	  {
 		"args" : (), # frequency, duration ...
-		"opts" : (),
+		"opts" : ("notes", "tune="),
 		"action" : cmd_playtones,
 		"help_usage" : "frequency duration [frequency duration ...]",
 		"help_descr" : "plays one or more tones",
@@ -417,7 +452,7 @@ recognized_commands = \
 	"tonesfile" :
 	  {
 		"args" : (), # frequency, duration ...
-		"opts" : (),
+		"opts" : ("notes", "tune="),
 		"action" : cmd_tonesfile,
 		"help_usage" : "frequency duration [frequency duration ...]",
 		"help_descr" :
