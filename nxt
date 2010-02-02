@@ -5,6 +5,7 @@
 # Created 2010 February 2 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
 
+from __future__ import with_statement
 import sys
 import getopt
 import nxt.locator
@@ -108,6 +109,24 @@ def cmd_ls(args, opts) :
 	#end if
 #end cmd_ls
 
+def cmd_download(args, opts) :
+	"""downloads a file to standard output."""
+	with nxt.brick.FileReader(brick, args[0]) as thefile :
+		for block in thefile :
+			sys.stdout.write(block)
+		#end for
+	#end with
+#end cmd_download
+
+def cmd_upload(args, opts) :
+	"""uploads a file from standard input."""
+	with nxt.brick.FileWriter(brick, args[0], sys.stdin) as thefile :
+		for dummy in thefile :
+			pass
+		#end for
+	#end with
+#end cmd_upload
+
 recognized_commands = \
   {
 # key is command name, value is dictionary with following fields:
@@ -150,7 +169,23 @@ recognized_commands = \
 			"Patterns can be name.ext, name.*, *.ext or *.*",
 	  },
 
-	# more TBD
+	"down" :
+	  {
+		"args" : 1, # filename
+		"opts" : (),
+		"action" : cmd_download,
+		"help_usage" : "filename",
+		"help_descr" : "downloads the file from the NXT and writes it to standard output",
+	  },
+
+	"up" :
+	  {
+		"args" : 1, # filename
+		"opts" : (),
+		"action" : cmd_upload,
+		"help_usage" : "filename",
+		"help_descr" : "uploads a file to the NXT by reading from standard input",
+	  },
 
   } # recognized_commands
 
