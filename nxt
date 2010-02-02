@@ -15,8 +15,7 @@ import nxt.locator
 import nxt.brick
 import nxt.error
 
-sock = nxt.locator.find_one_brick()
-brick = sock.connect()
+sock = None
 
 #+
 # Common command-related definitions
@@ -207,6 +206,8 @@ recognized_commands = \
 #     help_usage -- used to construct a usage string when giving help for the command.
 #     help_descr -- explanatory text shown when giving help for the command.
 #     action -- the function to invoke to actually perform the command.
+#     connect -- whether to actually open the connection to the NXT controller.
+#         If omitted, defaults to True.
 #
 # This whole structure is adapted from my geek_central project.
 
@@ -217,6 +218,7 @@ recognized_commands = \
 		"action" : cmd_help,
 		"help_usage" : "[cmd]",
 		"help_descr" : "gives help about the specified command",
+		"connect" : False,
 	  },
 
 # miscellaneous
@@ -386,8 +388,15 @@ def mainline() :
 			  )
 		#end if
 	#end if
+	if cmd_entry.get("connect", True) :
+		global brick, sock
+		sock = nxt.locator.find_one_brick()
+		brick = sock.connect()
+	#end if
 	cmd_entry["action"](args, opts) # can raise exceptions
 #end mainline
 
 mainline()
-sock.close()
+if sock != None :
+	sock.close()
+#end if
