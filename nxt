@@ -74,7 +74,13 @@ def cmd_help(args, opts) :
 	#end if
 #end cmd_help
 
+def cmd_df(args, opts) :
+	"""shows available free space."""
+	sys.stdout.write("Available: %d\n" % brick.get_device_info()[3])
+#end cmd_df
+
 def cmd_ls(args, opts) :
+	"""lists files matching one or more patterns."""
 	if len(args) == 0 :
 		args = ["*.*"]
 	#end if
@@ -124,13 +130,24 @@ recognized_commands = \
 		"help_descr" : "gives help about the specified command",
 	  },
 
+	"df" :
+	  {
+		"args" : 0,
+		"opts" : (),
+		"action" : cmd_df,
+		"help_usage" : "",
+		"help_descr" : "shows total space available",
+	  },
+
 	"ls" :
 	  {
 		"args" : (), # filename(s)
 		"opts" : (),
 		"action" : cmd_ls,
 		"help_usage" : "pattern [pattern...]",
-		"help_descr" : "lists filenames matching the specified pattern(s)",
+		"help_descr" :
+			"lists filenames matching the specified pattern(s).\n"
+			"Patterns can be name.ext, name.*, *.ext or *.*",
 	  },
 
 	# more TBD
