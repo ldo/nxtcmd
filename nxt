@@ -107,6 +107,11 @@ def cmd_name(args, opts) :
 	#end if
 #end cmd_name
 
+def cmd_hostid(args, opts) :
+	"""gets the controller host ID."""
+	sys.stdout.write(brick.get_device_info()[1] + "\n")
+#end cmd_hostid
+
 def cmd_battery_level(args, opts) :
 	"""shows the remaining battery level."""
 	sys.stdout.write("Battery level: %d\n" % brick.get_battery_level())
@@ -223,6 +228,15 @@ recognized_commands = \
 		"action" : cmd_name,
 		"help_usage" : "[newname]",
 		"help_descr" : "gets the existing name of the controller, or sets a new name",
+	  },
+
+	"hostid" :
+	  {
+		"args" : 0,
+		"opts" : (),
+		"action" : cmd_hostid,
+		"help_usage" : "",
+		"help_descr" : "returns the controller's host ID",
 	  },
 
 	"battery" :
