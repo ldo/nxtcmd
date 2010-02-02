@@ -2,13 +2,14 @@
 #+
 # Perform common file-manipulation operations on the Lego Mindstorms NXT controller.
 #
+# Requires NXT_Python <http://home.comcast.net/~dplau/nxt_python/index.html>.
+#
 # Created by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
 
 from __future__ import \
 	division, \
 	with_statement
-import math
 import sys
 import time
 import struct
