@@ -2,7 +2,7 @@
 #+
 # Perform common file-manipulation operations on the Lego Mindstorms NXT controller.
 #
-# Created 2010 February 2 by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Created by Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 #-
 
 from __future__ import \
@@ -10,12 +10,22 @@ from __future__ import \
 	with_statement
 import sys
 import time
+import struct
+import subprocess
 import getopt
 import nxt.locator
 import nxt.brick
 import nxt.error
 
-sock = None
+#+
+# Useful stuff
+#-
+
+def structread(fromfile, decode_struct) :
+	"""reads sufficient bytes from fromfile to be unpacked according to
+	decode_struct, and returns the unpacked results."""
+	return struct.unpack(decode_struct, fromfile.read(struct.calcsize(decode_struct)))
+#end structread
 
 #+
 # Common command-related definitions
@@ -34,6 +44,12 @@ def get_bool(boolstr, default) :
 	#end if
 	return result
 #end get_bool
+
+#+
+# Globals
+#-
+
+sock = None # connection to NXT controller
 
 #+
 # Definitions of valid commands.
@@ -196,6 +212,69 @@ def cmd_playtones(args, opts) :
 	#end while
 #end cmd_playtones
 
+def cmd_soundcvt(args, opts) :
+	"""converts between .rso and .wav file formats using sox."""
+	infilename, outfilename = args
+	rso_version = 1
+	if infilename.endswith(".rso") and outfilename.endswith(".wav") :
+		infile = open(infilename, "r")
+		version, compressed, length, sample_rate, play_mode = structread(infile, ">BBHHH")
+		if version != rso_version :
+			raise RuntimeError("bad .rso file version")
+		#end if
+		compressed = compressed != 0
+		# FIXME: can't properly decode compressed files
+		infmt = \
+			(
+				"-t", ("raw", "ima")[compressed],
+				"-b", ("8", "4")[compressed],
+				"-c", "1",
+				"-e", ("unsigned-integer", "ima-adpcm")[compressed],
+				"-r", "%d" % sample_rate,
+			)
+		outfmt = \
+			(
+				"-e", "unsigned-integer",
+				"-b", "8",
+			)
+		child = subprocess.Popen \
+		  (
+			args = ("sox",) + infmt + ("/dev/stdin",) + outfmt + (outfilename,),
+			stdin = subprocess.PIPE,
+			close_fds = True
+		  )
+		child.communicate(infile.read(length))
+	elif infilename.endswith(".wav") and outfilename.endswith(".rso") :
+		sample_rate = 8000
+		play_mode = 0
+		compressed = 0 # for now
+		child = subprocess.Popen \
+		  (
+			args =
+				(
+					"sox",
+					infilename,
+					"-t", "raw",
+					"-b", "8",
+					"-c", "1",
+					"-e", "signed-integer",
+					"-r", "%d" % sample_rate,
+					"/dev/stdout",
+				),
+			stdout = subprocess.PIPE,
+			close_fds = True
+		  )
+		data, _ = child.communicate()
+		outfile = open(outfilename, "w")
+		outfile.write(struct.pack(">BBHHH", rso_version, compressed, len(data), sample_rate, play_mode))
+		outfile.write(data)
+		outfile.flush()
+		outfile.close()
+	else :
+		raise getopt.GetoptError("one filename must end in .rso and the other in .wav")
+	#end if
+#end cmd_soundcvt
+
 recognized_commands = \
   {
 # key is command name, value is dictionary with following fields:
@@ -318,6 +397,16 @@ recognized_commands = \
 		"action" : cmd_playtones,
 		"help_usage" : "frequency duration [frequency duration ...]",
 		"help_descr" : "plays one or more tones",
+	  },
+
+	"soundcvt" :
+	  {
+		"args" : 2, # infile outfile
+		"opts" : (),
+		"action" : cmd_soundcvt,
+		"help_usage" : "infile outfile",
+		"help_descr" : "converts between .rso and .wav file formats using sox",
+		"connect" : False,
 	  },
 
   } # recognized_commands
