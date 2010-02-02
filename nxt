@@ -78,14 +78,26 @@ def cmd_ls(args, opts) :
 	if len(args) == 0 :
 		args = ["*.*"]
 	#end if
+	nxt_sector_size = 256
 	found_one = False
+	totalsize = 0
+	totalalloc = 0
 	for p in args :
-		for filename, filesize in nxt.brick.FileFinder(brick, p) :
-			sys.stdout.write("%6d %s\n" % (filesize, filename.rstrip("\x00")))
-			found_one = True
-		#end for
+		try :
+			for filename, filesize in nxt.brick.FileFinder(brick, p) :
+				allocsize = (filesize + nxt_sector_size - 1) // nxt_sector_size * nxt_sector_size
+				sys.stdout.write("%6d/%6d %s\n" % (filesize, allocsize, filename.rstrip("\x00")))
+				totalsize += filesize
+				totalalloc += allocsize
+				found_one = True
+			#end for
+		except nxt.error.FileNotFound :
+			pass # go on to the next pattern
+		#end try
 	#end for
-	if not found_one :
+	if found_one :
+		sys.stdout.write("%6d/%6d\n" % (totalsize, totalalloc))
+	else :
 		sys.stdout.write("no matches found\n")
 	#end if
 #end cmd_ls
