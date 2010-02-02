@@ -127,6 +127,11 @@ def cmd_upload(args, opts) :
 	#end with
 #end cmd_upload
 
+def cmd_rm(args, opts) :
+	"""deletes the single file with the specified name."""
+	brick.delete(args[0])
+#end cmd_rm
+
 recognized_commands = \
   {
 # key is command name, value is dictionary with following fields:
@@ -185,6 +190,16 @@ recognized_commands = \
 		"action" : cmd_upload,
 		"help_usage" : "filename",
 		"help_descr" : "uploads a file to the NXT by reading from standard input",
+	  },
+
+	"rm" :
+	  {
+		"args" : 1, # filename (1 only)
+		"opts" : (),
+		"action" : cmd_rm,
+		"help_usage" : "filename",
+		"help_descr" :
+			"deletes the file with the specified name",
 	  },
 
   } # recognized_commands
