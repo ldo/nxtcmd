@@ -212,6 +212,21 @@ def cmd_playtones(args, opts) :
 	#end while
 #end cmd_playtones
 
+def cmd_tonesfile(args, opts) :
+	"""encodes a sequence of tones into an .rmd file and writes it to standard output."""
+	if len(args) % 2 != 0 :
+		raise getopt.GetoptError("need an even number of args")
+	#end if
+	data = ""
+	while len(args) > 0 :
+		freq, dur = args[:2]
+		args = args[2:]
+		data += struct.pack(">HH", int(freq), int(dur))
+	#end while
+	sys.stdout.write(struct.pack(">HHHH", 0x0600, len(data), 0, 0))
+	sys.stdout.write(data)
+#end cmd_tonesfile
+
 def cmd_soundcvt(args, opts) :
 	"""converts between .rso and .wav file formats using sox."""
 	infilename, outfilename = args
@@ -397,6 +412,18 @@ recognized_commands = \
 		"action" : cmd_playtones,
 		"help_usage" : "frequency duration [frequency duration ...]",
 		"help_descr" : "plays one or more tones",
+	  },
+
+	"tonesfile" :
+	  {
+		"args" : (), # frequency, duration ...
+		"opts" : (),
+		"action" : cmd_tonesfile,
+		"help_usage" : "frequency duration [frequency duration ...]",
+		"help_descr" :
+			"writes a .rmd file to standard output that plays the specified tones"
+			" in sequence",
+		"connect" : False,
 	  },
 
 	"soundcvt" :
