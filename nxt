@@ -1,6 +1,11 @@
 #!/usr/bin/python
 #+
 # Perform common file-manipulation operations on the Lego Mindstorms NXT controller.
+# Start by invoking this script as
+#
+#     nxt help
+#
+# to see a list of the available commands, and how to get help on them.
 #
 # Requires NXT_Python <http://home.comcast.net/~dplau/nxt_python/index.html>.
 #
@@ -224,8 +229,10 @@ def cmd_upload(args, opts) :
 #end cmd_upload
 
 def cmd_rm(args, opts) :
-	"""deletes the single file with the specified name."""
-	brick.delete(args[0])
+	"""deletes the files with the specified names."""
+	for filename in args :
+		brick.delete(filename)
+	#end for
 #end cmd_rm
 
 def cmd_soundfile(args, opts) :
@@ -431,12 +438,12 @@ recognized_commands = \
 
 	"rm" :
 	  {
-		"args" : 1, # filename (1 only)
+		"args" : (), # filename [filename ...]
 		"opts" : (),
 		"action" : cmd_rm,
-		"help_usage" : "filename",
+		"help_usage" : "filename [filename ...]",
 		"help_descr" :
-			"deletes the file with the specified name",
+			"deletes the file with the specified names",
 	  },
 
 # sound
