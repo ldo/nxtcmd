@@ -340,6 +340,16 @@ def cmd_soundcvt(args, opts) :
 	#end if
 #end cmd_soundcvt
 
+def cmd_start_program(args, opts) :
+	"""starts a program running."""
+	brick.start_program(args[0])
+#end cmd_start_program
+
+def cmd_stop_program(args, opts) :
+	"""stops the currently-running program."""
+	brick.stop_program()
+#end cmd_stop_program
+
 recognized_commands = \
   {
 # key is command name, value is dictionary with following fields:
@@ -486,6 +496,28 @@ recognized_commands = \
 		"help_usage" : "infile outfile",
 		"help_descr" : "converts between .rso and .wav file formats using sox",
 		"connect" : False,
+	  },
+
+# process control
+
+	"start" :
+	  {
+		"args" : 1, # program filename
+		"opts" : (),
+		"action" : cmd_start_program,
+		"help_usage" : "filename",
+		"help_descr" :
+			"starts the specified program running",
+	  },
+
+	"stop" :
+	  {
+		"args" : 0,
+		"opts" : (),
+		"action" : cmd_stop_program,
+		"help_usage" : "",
+		"help_descr" :
+			"stops the currently-running program",
 	  },
 
   } # recognized_commands
