@@ -299,7 +299,7 @@ def cmd_soundcvt(args, opts) :
 		if compressed :
 			# my adaptation of the IMA-ADPCM decoder algorithm.
 			# Might be slower than C code, but the files won't be big anyway.
-			sample = 128
+			sample = 128 # always start at zero point
 			index = 0
 			sounddata = ""
 			while True :
@@ -370,7 +370,7 @@ def cmd_soundcvt(args, opts) :
 	elif infilename.endswith(".wav") and outfilename.endswith(".rso") :
 		sample_rate = 8000
 		play_mode = 0
-		compressed = 0 # for now
+		compressed = opts.has_key("compressed")
 		child = subprocess.Popen \
 		  (
 			args =
@@ -380,15 +380,68 @@ def cmd_soundcvt(args, opts) :
 					"-t", "raw",
 					"-b", "8",
 					"-c", "1",
-					"-e", "signed-integer",
+					"-e", "unsigned-integer",
 					"-r", "%d" % sample_rate,
 					"/dev/stdout",
 				),
 			stdout = subprocess.PIPE,
 			close_fds = True
 		  )
-		data, _ = child.communicate()
+		sounddata, _ = child.communicate()
+		if len(sounddata) > 65535 * (1 + compressed) :
+			raise RuntimeError("sound data cannot exceed 65535 bytes")
+		#end if
 		outfile = open(outfilename, "w")
+		if compressed :
+			# my adaptation of the IMA-ADPCM encoder algorithm.
+			# Might be slower than C code, but the files won't be big anyway.
+			index = 0
+			prevsample = 128 # always start at zero point
+			nibble = 0
+			outbyte = None
+			data = ""
+			i = 0
+			while i < len(sounddata) :
+				diff = ord(sounddata[i]) - prevsample
+				i += 1
+				step = adpcm_step[index]
+				sign = 8 * (diff < 0)
+				diff = abs(diff)
+				mask = 4
+				encode = 0
+				vpdiff = 0
+				while mask > 0 :
+					if diff >= step :
+						encode |= mask
+						diff -= step
+						vpdiff += step
+					#end if
+					mask >>= 1
+					step >>= 1
+				#end while
+				vpdiff += step
+				prevsample = max(min(prevsample + vpdiff * (-1, +1)[sign == 0], 255), 0)
+				if encode >= 4 :
+					index += (encode - 3) * 2
+					if index > 37 :
+						index = 37
+					#end if
+				elif index > 0 :
+					index -= 1
+				#end if
+				if outbyte == None :
+					outbyte = 0
+				#end if
+				nibble = 4 - nibble
+				outbyte |= (encode | sign) << nibble
+				if nibble == 0 or i == len(sounddata) :
+					data += chr(outbyte)
+					outbyte = None
+				#end if
+			#end while
+		else :
+			data = sounddata
+		#end if
 		outfile.write(struct.pack(">BBHHH", rso_version, compressed, len(data), sample_rate, play_mode))
 		outfile.write(data)
 		outfile.flush()
@@ -549,9 +602,9 @@ recognized_commands = \
 	"soundcvt" :
 	  {
 		"args" : 2, # infile outfile
-		"opts" : (),
+		"opts" : ("compressed",),
 		"action" : cmd_soundcvt,
-		"help_usage" : "infile outfile",
+		"help_usage" : "infile outfile [--compressed]",
 		"help_descr" : "converts between .rso and .wav file formats with the help of sox",
 		"connect" : False,
 	  },
