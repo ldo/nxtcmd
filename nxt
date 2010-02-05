@@ -34,6 +34,14 @@ def structread(fromfile, decode_struct) :
 	return struct.unpack(decode_struct, fromfile.read(struct.calcsize(decode_struct)))
 #end structread
 
+adpcm_step = tuple \
+	(( # IMA-ADPCM sample-step table truncated to 8 bits (38 entries)
+		7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+		19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+		50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+		130, 143, 157, 173, 190, 209, 230, 253,
+	))
+
 #+
 # Common command-related definitions
 #-
@@ -278,7 +286,7 @@ def cmd_tonesfile(args, opts) :
 #end cmd_tonesfile
 
 def cmd_soundcvt(args, opts) :
-	"""converts between .rso and .wav file formats using sox."""
+	"""converts between .rso and .wav file formats with the help of sox."""
 	infilename, outfilename = args
 	rso_version = 1
 	if infilename.endswith(".rso") and outfilename.endswith(".wav") :
@@ -288,27 +296,77 @@ def cmd_soundcvt(args, opts) :
 			raise RuntimeError("bad .rso file version")
 		#end if
 		compressed = compressed != 0
-		# FIXME: can't properly decode compressed files
-		infmt = \
-			(
-				"-t", ("raw", "ima")[compressed],
-				"-b", ("8", "4")[compressed],
-				"-c", "1",
-				"-e", ("unsigned-integer", "ima-adpcm")[compressed],
-				"-r", "%d" % sample_rate,
-			)
-		outfmt = \
-			(
-				"-e", "unsigned-integer",
-				"-b", "8",
-			)
+		if compressed :
+			# my adaptation of the IMA-ADPCM decoder algorithm.
+			# Might be slower than C code, but the files won't be big anyway.
+			sample = 128
+			index = 0
+			sounddata = ""
+			while True :
+				inbyte = infile.read(1)
+				if len(inbyte) == 0 :
+					break
+				inbyte = ord(inbyte)
+				nibble = 4
+				while True : # do each nibble
+					step = adpcm_step[index]
+					delta = inbyte >> nibble & 15
+					sign = (+1, -1)[(delta & 8) != 0]
+					delta &= 7
+					if delta >= 4 :
+						index += (delta - 3) * 2
+						if index > 37 :
+							index = 37
+						#end if
+					elif index > 0 :
+						index -= 1
+					#end if
+					sample += \
+						(
+							(
+								(step >> 3)
+							+
+								(step >> 2) * ((delta & 1) != 0)
+							+
+								(step >> 1) * ((delta & 2) != 0)
+							+
+								step * ((delta & 4) != 0)
+							) # almost, but not quite step * (2 * delta + 1) // 4
+						*
+							sign
+						)
+					if sample > 255 :
+						sample = 255
+					elif sample < 0 :
+						sample = 0
+					#end if
+					sounddata += chr(sample)
+					if nibble == 0 :
+						break
+					nibble = 0
+				#end while
+			#end while
+		else :
+			sounddata = infile.read()
+		#end if
+		# use sox to properly construct output .wav file
 		child = subprocess.Popen \
 		  (
-			args = ("sox",) + infmt + ("/dev/stdin",) + outfmt + (outfilename,),
+			args =
+				(
+					"sox",
+					"-t", "raw",
+					"-b", "8",
+					"-c", "1",
+					"-e", "unsigned-integer",
+					"-r", "%d" % sample_rate,
+					"/dev/stdin",
+					outfilename,
+				),
 			stdin = subprocess.PIPE,
 			close_fds = True
 		  )
-		child.communicate(infile.read(length))
+		child.communicate(sounddata)
 	elif infilename.endswith(".wav") and outfilename.endswith(".rso") :
 		sample_rate = 8000
 		play_mode = 0
@@ -494,7 +552,7 @@ recognized_commands = \
 		"opts" : (),
 		"action" : cmd_soundcvt,
 		"help_usage" : "infile outfile",
-		"help_descr" : "converts between .rso and .wav file formats using sox",
+		"help_descr" : "converts between .rso and .wav file formats with the help of sox",
 		"connect" : False,
 	  },
 
