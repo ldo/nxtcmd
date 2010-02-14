@@ -126,7 +126,7 @@ def cmd_help(args, opts) :
 	if cmd != None :
 		sys.stderr.write \
 		  (
-				"Usage:\n\n\t%s %s %s\n\n%s.\n"
+				"Usage:\n\n    %s %s %s\n\n%s.\n"
 			%
 				(
 					sys.argv[0],
@@ -581,8 +581,7 @@ recognized_commands = \
 		"opts" : (),
 		"action" : cmd_rm,
 		"help_usage" : "filename [filename ...]",
-		"help_descr" :
-			"deletes the file with the specified names",
+		"help_descr" : "deletes the files with the specified names",
 	  },
 
 # sound
@@ -635,8 +634,7 @@ recognized_commands = \
 		"opts" : (),
 		"action" : cmd_start_program,
 		"help_usage" : "filename",
-		"help_descr" :
-			"starts the specified program running",
+		"help_descr" : "starts the specified program running",
 	  },
 
 	"stop" :
@@ -645,8 +643,7 @@ recognized_commands = \
 		"opts" : (),
 		"action" : cmd_stop_program,
 		"help_usage" : "",
-		"help_descr" :
-			"stops the currently-running program",
+		"help_descr" : "stops the currently-running program",
 	  },
 
   } # recognized_commands
