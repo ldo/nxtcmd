@@ -16,7 +16,6 @@ from __future__ import \
 	division, \
 	with_statement
 import sys
-import time
 import struct
 import subprocess
 import getopt
@@ -264,15 +263,10 @@ def cmd_soundfile(args, opts) :
 
 def cmd_playtones(args, opts) :
 	"""plays one or more tones."""
-	if len(args) % 2 != 0 :
-		raise getopt.GetoptError("need an even number of args")
-	#end if
 	notefn = make_note_converter(opts)
-	while len(args) > 0 :
-		freq, dur = args[:2]
-		args = args[2:]
-		brick.play_tone(notefn(freq), int(dur))
-		time.sleep(int(dur) / 1000) # wait for tone to finish before next
+	for arg in args :
+		freq, dur = arg.split(":", 1)
+		brick.play_tone_and_wait(notefn(freq), int(dur))
 	#end while
 #end cmd_playtones
 
@@ -281,14 +275,10 @@ def cmd_tonesfile(args, opts) :
 	Various websites describe this as an .rmd file, but the NXT on-board interface
 	will not show it to the user as a sound file unless it has an .rso extension.
 	Of course, programmatic commands can access it and play it regardless."""
-	if len(args) % 2 != 0 :
-		raise getopt.GetoptError("need an even number of args")
-	#end if
 	notefn = make_note_converter(opts)
 	data = ""
-	while len(args) > 0 :
-		freq, dur = args[:2]
-		args = args[2:]
+	for arg in args :
+		freq, dur = arg.split(":", 1)
 		data += struct.pack(">HH", notefn(freq), int(dur))
 	#end while
 	sys.stdout.write(struct.pack(">BBHHH", 6, 0, len(data), 0, 0))
@@ -471,6 +461,13 @@ def cmd_stop_program(args, opts) :
 	brick.stop_program()
 #end cmd_stop_program
 
+tones_help = \
+	"\nEach frequency:duration pair specifies a note frequency and corresponding\n" \
+	"duration in milliseconds. The frequency is in integer hertz, unless --notes\n" \
+	"is specified, in which case it is a MIDI note number (60 = middle C), which\n" \
+	"can be fractional. --tune specifies an alternative tuning for MIDI note numbers\n" \
+	"in the form notenr:frequency. If omitted, the default is 69:440 (A = 440Hz)"
+
 recognized_commands = \
   {
 # key is command name, value is dictionary with following fields:
@@ -601,22 +598,22 @@ recognized_commands = \
 
 	"tones" :
 	  {
-		"args" : (), # frequency, duration ...
+		"args" : (), # frequency:duration ...
 		"opts" : ("notes", "tune="),
 		"action" : cmd_playtones,
-		"help_usage" : "frequency duration [frequency duration ...]",
-		"help_descr" : "plays one or more tones",
+		"help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
+		"help_descr" : "plays one or more tones.\n" + tones_help,
 	  },
 
 	"tonesfile" :
 	  {
-		"args" : (), # frequency, duration ...
+		"args" : (), # frequency:duration ...
 		"opts" : ("notes", "tune="),
 		"action" : cmd_tonesfile,
-		"help_usage" : "frequency duration [frequency duration ...]",
+		"help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
 		"help_descr" :
 			"writes a .rmd file to standard output that plays the specified tones"
-			" in sequence",
+			" in sequence.\n" + tones_help,
 		"connect" : False,
 	  },
 
