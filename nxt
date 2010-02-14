@@ -182,12 +182,27 @@ def cmd_df(args, opts) :
 #end cmd_df
 
 def cmd_ls(args, opts) :
-	"""lists files matching one or more patterns."""
+	"""lists names of files matching one or more patterns."""
+	if len(args) == 0 :
+		args = ["*.*"]
+	#end if
+	for p in args :
+		try :
+			for filename, _ in nxt.brick.FileFinder(brick, p) :
+				sys.stdout.write("%s\n" % filename.rstrip("\x00"))
+			#end for
+		except nxt.error.FileNotFound :
+			pass # go on to the next pattern
+		#end try
+	#end for
+#end cmd_ls
+
+def cmd_lls(args, opts) :
+	"""lists details of files matching one or more patterns."""
 	if len(args) == 0 :
 		args = ["*.*"]
 	#end if
 	nxt_sector_size = 256
-	found_one = False
 	totalsize = 0
 	totalalloc = 0
 	for p in args :
@@ -197,18 +212,13 @@ def cmd_ls(args, opts) :
 				sys.stdout.write("%6d/%6d %s\n" % (filesize, allocsize, filename.rstrip("\x00")))
 				totalsize += filesize
 				totalalloc += allocsize
-				found_one = True
 			#end for
 		except nxt.error.FileNotFound :
 			pass # go on to the next pattern
 		#end try
 	#end for
-	if found_one :
-		sys.stdout.write("%6d/%6d\n" % (totalsize, totalalloc))
-	else :
-		sys.stdout.write("no matches found\n")
-	#end if
-#end cmd_ls
+	sys.stdout.write("%6d/%6d\n" % (totalsize, totalalloc))
+#end cmd_lls
 
 def cmd_download(args, opts) :
 	"""downloads a file to standard output."""
@@ -533,7 +543,18 @@ recognized_commands = \
 		"action" : cmd_ls,
 		"help_usage" : "pattern [pattern...]",
 		"help_descr" :
-			"lists filenames matching the specified pattern(s).\n"
+			"lists filenames of matching the specified pattern(s).\n"
+			"Patterns can be name.ext, name.*, *.ext or *.*",
+	  },
+
+	"lls" :
+	  {
+		"args" : (), # filename(s)
+		"opts" : (),
+		"action" : cmd_lls,
+		"help_usage" : "pattern [pattern...]",
+		"help_descr" :
+			"lists names and sizes of matching the specified pattern(s).\n"
 			"Patterns can be name.ext, name.*, *.ext or *.*",
 	  },
 
