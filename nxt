@@ -18,6 +18,7 @@ from __future__ import \
 import sys
 import struct
 import subprocess
+import xml.sax.saxutils
 import getopt
 import nxt.locator
 import nxt.brick
@@ -40,6 +41,32 @@ adpcm_step = tuple \
 		50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
 		130, 143, 157, 173, 190, 209, 230, 253,
 	))
+
+# RIC file opcodes
+IMG_DESCRIPTION_ID = 0 # ignored by firmware
+IMG_SPRITE_ID = 1
+IMG_VARMAP_ID = 2
+IMG_COPYBITS_ID = 3
+IMG_PIXEL_ID = 4
+IMG_LINE_ID = 5
+IMG_RECTANGLE_ID = 6
+IMG_CIRCLE_ID = 7 # not implemented by current (1.2x) firmware
+IMG_NUMBOX_ID = 8
+
+def QuoteXMLAttr(val) :
+	"""encodes val in a form suitable for use as an XML attribute value, complete
+	with quotation marks."""
+	return xml.sax.saxutils.quoteattr(str(val))
+#end QuoteXMLAttr
+
+def QuoteResolvable(val) :
+	"""encodes integer val for display as an XML attribute value, using hex encoding
+	for varmap references."""
+	if (val & 0xF0000) != 0 :
+		val = "%04x" % val
+	#end if
+	return QuoteXMLAttr(val)
+#end QuoteResolvable
 
 #+
 # Common command-related definitions
@@ -451,6 +478,180 @@ def cmd_soundcvt(args, opts) :
 	#end if
 #end cmd_soundcvt
 
+def cmd_unric(args, opts) :
+	"""decompiles a .ric file to XML format to standard output."""
+	ricfile = open(args[0], "r")
+	xml = sys.stdout
+	xml.write("<ric>\n")
+	while True :
+		ophdr = ricfile.read(4)
+		if ophdr == "" :
+			break
+		OpSize, OpCode = struct.unpack("<HH", ophdr)
+		if OpCode == IMG_DESCRIPTION_ID :
+			assert OpSize == 8
+			Options, Width, Height = structread(ricfile, "<HHH")
+			xml.write \
+			  (
+					"    <description options=%(options)s width=%(width)s height=%(height)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(Options),
+						"width" : QuoteXMLAttr(Width),
+						"height" : QuoteXMLAttr(Height),
+					}
+			  )
+		elif OpCode == IMG_SPRITE_ID :
+			assert OpSize > 8
+			DataAddr, Rows, RowBytes = structread(ricfile, "<HHH")
+			assert (RowBytes & 1) == 0
+			NrBytes = Rows * RowBytes
+			Bytes = ricfile.read(Rows * RowBytes)
+			assert len(Bytes) == Rows * RowBytes
+			xml.write \
+			  (
+					"    <sprite data_addr=%(data_addr)s rows=%(rows)s rowbytes=%(rowbytes)s>\n"
+				%
+					{
+						"data_addr" : QuoteXMLAttr(DataAddr),
+						"rows" : QuoteXMLAttr(Rows),
+						"rowbytes" : QuoteXMLAttr(RowBytes),
+					}
+			  )
+			for RowNr in range(0, Rows) :
+				Row = Bytes[RowNr * RowBytes : (RowNr + 1) * RowBytes]
+				xml.write("        ")
+				for Col in range(0, RowBytes * 8) :
+					xml.write((".", "X")[ord(Row[Col // 8]) & (1 << 7 - Col % 8) != 0])
+				#end for
+				xml.write("\n")
+			#end for
+			xml.write("    </sprite>\n")
+		elif OpCode == IMG_VARMAP_ID :
+			assert OpSize >= 10
+			DataAddr, MapCount = structread(ricfile, "<HH")
+			MapLen = MapCount * 4
+			Map = ricfile.read(MapLen)
+			assert len(Map) == MapLen
+			xml.write \
+			  (
+					"    <varmap data_addr=%(data_addr)s count=%(count)s>\n"
+				%
+					{
+						"data_addr" : QuoteXMLAttr(DataAddr),
+						"count" : QuoteXMLAttr(Count),
+					}
+			  )
+			for i in range(0, MapCount) :
+				Domain, Range = struct.unpack("<HH", Map[i * 4 : (i + 1) * 4])
+				xml.write("        %d:%d\n" % (Domain, Range))
+			#end for
+			xml.write("    </varmap>\n")
+		elif OpCode == IMG_COPYBITS_ID :
+			assert OpSize == 18
+			CopyOptions, DataAddr, SrcX, SrcY, Width, Height, DstX, DstY = \
+				structread(ricfile, "<HHHHHHHH")
+			xml.write \
+			  (
+					"    <copybits options=%(options)s data_addr=%(data_addr)s"
+					" src_x=%(src_x)s src_y=%(src_y)s width=%(width)s height=%(height)s"
+					" dst_x=%(dst_x)s dst_y=%(dst_y)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"data_addr" : QuoteResolvable(DataAddr),
+						"src_x" : QuoteResolvable(SrcX),
+						"src_y" : QuoteResolvable(SrcY),
+						"width" : QuoteResolvable(Width),
+						"height" : QuoteResolvable(Height),
+						"dst_x" : QuoteResolvable(DstX),
+						"dst_y" : QuoteResolvable(DstY),
+					}
+			  )
+		elif OpCode == IMG_PIXEL_ID :
+			assert OpSize == 10
+			CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
+			xml.write \
+			  (
+					"    <pixel options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s value=%(value)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"pt_x" : QuoteResolvable(PtX),
+						"pt_y" : QuoteResolvable(PtY),
+						"value" : QuoteResolvable(Value),
+					}
+			  )
+		elif OpCode == IMG_LINE_ID :
+			assert OpSize == 12
+			CopyOptions, Pt1X, Pt1Y, Pt2X, Pt2Y = structread(ricfile, "<HHHHH")
+			xml.write \
+			  (
+					"    <line options=%(options)s pt1_x=%(pt1_x)s pt1_y=%(pt1_y)s"
+					" pt2_x=%(pt2_x)s pt2_y=%(pt2_y)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"pt1_x" : QuoteResolvable(Pt1X),
+						"pt1_y" : QuoteResolvable(Pt1Y),
+						"pt2_x" : QuoteResolvable(Pt2X),
+						"pt2_y" : QuoteResolvable(Pt2Y),
+					}
+			  )
+		elif OpCode == IMG_RECTANGLE_ID :
+			assert OpSize == 12
+			CopyOptions, PtX, PtY, Width, Height = structread(ricfile, "<HHHHH")
+			xml.write \
+			  (
+					"    <rect options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+					" width=%(width)s height=%(height)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"pt_x" : QuoteResolvable(PtX),
+						"pt_y" : QuoteResolvable(PtY),
+						"width" : QuoteResolvable(Width),
+						"height" : QuoteResolvable(Height),
+					}
+			  )
+		elif OpCode == IMG_CIRCLE_ID : # not implemented in current firmware!
+			assert OpSize == 10
+			CopyOptions, PtX, PtY, Radius = structread(ricfile, "<HHHH")
+			xml.write \
+			  (
+					"    <circle options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+					" radius=%(radius)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"pt_x" : QuoteResolvable(PtX),
+						"pt_y" : QuoteResolvable(PtY),
+						"radius" : QuoteResolvable(Radius),
+					}
+			  )
+		elif OpCode == IMG_NUMBOX_ID :
+			assert OpSize == 10
+			CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
+			xml.write \
+			  (
+					"    <numbox options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+					" value=%(value)s/>\n"
+				%
+					{
+						"options" : QuoteXMLAttr(CopyOptions),
+						"pt_x" : QuoteResolvable(PtX),
+						"pt_y" : QuoteResolvable(PtY),
+						"value" : QuoteResolvable(Value),
+					}
+			  )
+		else :
+			raise RuntimeError("unrecognized opcode %04x in .ric file" % OpCode)
+		#end if
+	#end while
+	xml.write("</ric>\n")
+	xml.flush()
+#end cmd_unric
+
 def cmd_start_program(args, opts) :
 	"""starts a program running."""
 	brick.start_program(args[0])
@@ -623,6 +824,18 @@ recognized_commands = \
 		"action" : cmd_soundcvt,
 		"help_usage" : "infile outfile [--compressed]",
 		"help_descr" : "converts between .rso and .wav file formats with the help of sox",
+		"connect" : False,
+	  },
+
+# graphics
+
+	"unric" :
+	  {
+		"args" : 1, # infile
+		"opts" : (),
+		"action" : cmd_unric,
+		"help_usage" : "infile",
+		"help_descr" : "decompiles a .ric file to XML format to standard output",
 		"connect" : False,
 	  },
 
