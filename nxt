@@ -18,6 +18,7 @@ from __future__ import \
 import sys
 import struct
 import subprocess
+import xml.parsers.expat as expat
 import xml.sax.saxutils
 import getopt
 import nxt.locator
@@ -62,8 +63,8 @@ def QuoteXMLAttr(val) :
 def QuoteResolvable(val) :
 	"""encodes integer val for display as an XML attribute value, using hex encoding
 	for varmap references."""
-	if (val & 0xF0000) != 0 :
-		val = "%04x" % val
+	if (val & 0xF000) != 0 :
+		val = "0x%04x" % val
 	#end if
 	return QuoteXMLAttr(val)
 #end QuoteResolvable
@@ -478,6 +479,297 @@ def cmd_soundcvt(args, opts) :
 	#end if
 #end cmd_soundcvt
 
+def cmd_makeric(args, opts) :
+	"""compiles an XML description from standard input into a .ric file."""
+
+	ricfile = None
+	parse_state = \
+		{
+			"in_ric" : False,
+			"in_tag" : None,
+			"content" : None,
+			"data_addr_defined" : set(), # should also distinguish between sprite entries and varmap entries
+		}
+
+	def write_op(op, data) :
+		ricfile.write \
+		  (
+			struct.pack("<HH", len(data) + 2, op) + data
+		  )
+	#end write_op
+
+	def validate_data_addr(data_addr, new) :
+		if new or (data_addr & 0xF000) == 0 :
+			assert data_addr >= 1 and data_addr <= 10, "data_addr out of range"
+			assert new != (data_addr in parse_state["data_addr_defined"]), "data_addr " + ("not", "already")[new] + " defined"
+		#end if
+		if new :
+			parse_state["data_addr_defined"].add(data_addr)
+		elif (data_addr & 0xF000) != 0 :
+			assert (data_addr & 0x0F00) >> 8 in parse_state["data_addr_defined"], "data_addr map not defined"
+		#end if
+	#end validate_data_addr
+
+	def get_resolvable(attrs, key) :
+		"""interprets an attribute value as either a plain integer or a varmap reference."""
+		value = int(attrs[key], 0) # varmap references are just hex integers for now
+		if (value & 0xF000) != 0 :
+			assert (value & 0x0F00) >> 8 in parse_state["data_addr_defined"], "data_addr map not defined"
+		#end if
+		return value
+	#end get_resolvable
+
+	def handle_description(name, attrs) :
+		write_op \
+		  (
+			IMG_DESCRIPTION_ID,
+			struct.pack
+			  (
+				"<HHH",
+				int(attrs["options"]),
+				int(attrs["width"]),
+				int(attrs["height"]),
+			  )
+		  )
+	#end handle_description
+
+	def handle_sprite_begin(name, attrs) :
+		parse_state["attrs"] = \
+			{
+				"data_addr" : int(attrs["data_addr"]),
+				"rows" : int(attrs["rows"]),
+				"rowbytes" : int(attrs["rowbytes"]),
+			}
+		validate_data_addr(parse_state["attrs"]["data_addr"], True)
+		assert (parse_state["attrs"]["rowbytes"] & 1) == 0, "rowbytes must be even"
+	#end handle_sprite_begin
+
+	def handle_sprite_end(name) :
+		Bytes = ""
+		RowNr = 0
+		for Row in parse_state["content"].split() :
+			RowNr += 1
+			assert len(Row) == parse_state["attrs"]["rowbytes"] * 8, "wrong length for row"
+			ThisByte = None
+			Col = 0
+			while True :
+				if Col % 8 == 0 :
+					if Col != 0 :
+						Bytes += chr(ThisByte)
+					#end if
+					if Col == len(Row) :
+						break
+					ThisByte = 0
+				#end if
+				ThisByte |= (Row[Col] != ".") << (7 - Col % 8)
+				Col += 1
+			#end while
+		#end for
+		assert RowNr == parse_state["attrs"]["rows"], "wrong number of rows"
+		write_op \
+		  (
+			IMG_SPRITE_ID,
+				struct.pack
+				  (
+					"<HHH",
+					parse_state["attrs"]["data_addr"],
+					parse_state["attrs"]["rows"],
+					parse_state["attrs"]["rowbytes"],
+				  )
+			+
+				Bytes
+		  )
+	#end handle_sprite_end
+
+	def handle_varmap_begin(name, attrs) :
+		parse_state["attrs"] = \
+			{
+				"data_addr" : int(attrs["data_addr"]),
+				"count" : int(attrs["count"]),
+			}
+		validate_data_addr(parse_state["attrs"]["data_addr"], True)
+	#end handle_varmap_begin
+
+	def handle_varmap_end(name) :
+		Map = ""
+		for Entry in parse_state["content"].split() :
+			Domain, Range = Entry.split(":", 1)
+			Map += struct.pack("<HH", int(Domain), int(Range))
+		#end for
+		assert len(Map) == parse_state["attrs"]["count"] * 4, "varmap values don't match count"
+		write_op \
+		  (
+			IMG_VARMAP_ID,
+				struct.pack \
+				  (
+					"<HH",
+					parse_state["attrs"]["data_addr"],
+					parse_state["attrs"]["count"],
+				  )
+			+
+				Map
+		  )
+	#end handle_varmap_end
+
+	def handle_copybits(name, attrs) :
+		data_addr = get_resolvable(attrs, "data_addr")
+		validate_data_addr(data_addr, False)
+		write_op \
+		  (
+			IMG_COPYBITS_ID,
+			struct.pack
+			  (
+				"<HHHHHHHH",
+				int(attrs["options"]),
+				data_addr,
+				get_resolvable(attrs, "src_x"),
+				get_resolvable(attrs, "src_y"),
+				get_resolvable(attrs, "width"),
+				get_resolvable(attrs, "height"),
+				get_resolvable(attrs, "dst_x"),
+				get_resolvable(attrs, "dst_y"),
+			  )
+		  )
+	#end handle_copybits
+
+	def handle_pixel(name, attrs) :
+		write_op \
+		  (
+			IMG_PIXEL_ID,
+			struct.pack
+			  (
+				"<HHHH",
+				int(attrs["options"]),
+				get_resolvable(attrs, "pt_x"),
+				get_resolvable(attrs, "pt_y"),
+				get_resolvable(attrs, "value"),
+			  )
+		  )
+	#end handle_pixel
+
+	def handle_line(name, attrs) :
+		write_op \
+		  (
+			IMG_LINE_ID,
+			struct.pack
+			  (
+				"<HHHHH",
+				int(attrs["options"]),
+				get_resolvable(attrs, "pt1_x"),
+				get_resolvable(attrs, "pt1_y"),
+				get_resolvable(attrs, "pt2_x"),
+				get_resolvable(attrs, "pt2_y"),
+			  )
+		  )
+	#end handle_line
+
+	def handle_rect(name, attrs) :
+		write_op \
+		  (
+			IMG_RECTANGLE_ID,
+			struct.pack
+			  (
+				"<HHHHH",
+				int(attrs["options"]),
+				get_resolvable(attrs, "pt_x"),
+				get_resolvable(attrs, "pt_y"),
+				get_resolvable(attrs, "width"),
+				get_resolvable(attrs, "height"),
+			  )
+		  )
+	#end handle_rect
+
+	def handle_circle(name, attrs) :
+		write_op \
+		  (
+			IMG_CIRCLE_ID,
+			struct.pack
+			  (
+				"<HHHH",
+				int(attrs["options"]),
+				get_resolvable(attrs, "pt1_x"),
+				get_resolvable(attrs, "pt1_y"),
+				get_resolvable(attrs, "radius"),
+			  )
+		  )
+	#end handle_circle
+
+	def handle_numbox(name, attrs) :
+		write_op \
+		  (
+			IMG_NUMBOX_ID,
+			struct.pack
+			  (
+				"<HHHH",
+				int(attrs["options"]),
+				get_resolvable(attrs, "pt_x"),
+				get_resolvable(attrs, "pt_y"),
+				get_resolvable(attrs, "value"),
+			  )
+		  )
+	#end handle_numbox
+
+	element_handlers = \
+		{
+			"description" : handle_description,
+			"sprite" : handle_sprite_begin,
+			"varmap" : handle_varmap_begin,
+			"copybits" : handle_copybits,
+			"pixel" : handle_pixel,
+			"line" : handle_line,
+			"rect" : handle_rect,
+			"circle" : handle_circle,
+			"numbox" : handle_numbox,
+		}
+	element_end_handlers = \
+		{
+			"sprite" : handle_sprite_end,
+			"varmap" : handle_varmap_end,
+		}
+	def handle_start_element(name, attrs) :
+		if parse_state["in_ric"] :
+			parse_state["in_tag"] = name
+			if element_end_handlers.has_key(name) :
+				parse_state["content"] = ""
+			#end if
+			element_handlers[name](name, attrs)
+		else :
+			assert name == "ric"
+			parse_state["in_ric"] = True
+		#end if
+	#end handle_start_element
+
+	def handle_element_content(data) :
+		if parse_state["content"] != None :
+			parse_state["content"] += data
+		#end if
+	#end handle_element_content
+
+	def handle_end_element(name) :
+		if parse_state["in_ric"] :
+			if parse_state["in_tag"] != None :
+				if element_end_handlers.has_key(name) :
+					element_end_handlers[name](name)
+				#end if
+				parse_state["in_tag"] = None
+				parse_state["content"] = None
+			else :
+				parse_state["in_ric"] = False
+			#end if
+		#end if
+	#end handle_end_element
+
+#begin cmd_makeric
+	parser = expat.ParserCreate()
+	parser.StartElementHandler = handle_start_element
+	parser.CharacterDataHandler = handle_element_content
+	parser.EndElementHandler = handle_end_element
+	ricfile = open(args[0], "w")
+	parser.ParseFile(sys.stdin)
+	ricfile.flush()
+	ricfile.close()
+#end cmd_makeric
+
 def cmd_unric(args, opts) :
 	"""decompiles a .ric file to XML format to standard output."""
 	ricfile = open(args[0], "r")
@@ -539,7 +831,7 @@ def cmd_unric(args, opts) :
 				%
 					{
 						"data_addr" : QuoteXMLAttr(DataAddr),
-						"count" : QuoteXMLAttr(Count),
+						"count" : QuoteXMLAttr(MapCount),
 					}
 			  )
 			for i in range(0, MapCount) :
@@ -828,6 +1120,16 @@ recognized_commands = \
 	  },
 
 # graphics
+
+	"makeric" :
+	  {
+		"args" : 1, # outfile
+		"opts" : (),
+		"action" : cmd_makeric,
+		"help_usage" : "outfile",
+		"help_descr" : "compiles an XML description from standard input into a .ric file",
+		"connect" : False,
+	  },
 
 	"unric" :
 	  {
