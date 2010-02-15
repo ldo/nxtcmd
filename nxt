@@ -514,7 +514,7 @@ def cmd_makeric(args, opts) :
 		"""interprets an attribute value as either a plain integer or a varmap reference."""
 		value = int(attrs[key], 0) # varmap references are just hex integers for now
 		if (value & 0xF000) != 0 :
-			assert (value & 0x0F00) >> 8 in parse_state["data_addr_defined"], "data_addr map not defined"
+			assert (value & 0x0F00) >> 8 in parse_state["data_addr_defined"] | set((0,)), "data_addr map not defined"
 		#end if
 		return value
 	#end get_resolvable
