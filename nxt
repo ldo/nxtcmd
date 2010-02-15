@@ -261,16 +261,21 @@ def cmd_upload(args, opts) :
 	filename = args[0]
 	if opts.has_key("replace") :
 		try :
-			brick.delete(args[0])
+			brick.delete(filename)
 		except nxt.error.FileNotFound :
 			pass
 		#end try
 	#end if
-	with nxt.brick.FileWriter(brick, filename, sys.stdin) as thefile :
-		for dummy in thefile :
-			pass
-		#end for
-	#end with
+	data = sys.stdin.read()
+	up = (brick.open_write, brick.open_write_linear)[opts.has_key("linear")](filename, len(data))
+	while True :
+		to_write = min(len(data), brick.sock.bsize)
+		if to_write == 0 :
+			break
+		brick.write(up, data[:to_write])
+		data = data[to_write:]
+	#end while
+	brick.close(up)
 #end cmd_upload
 
 def cmd_rm(args, opts) :
@@ -1060,12 +1065,13 @@ recognized_commands = \
 	"up" :
 	  {
 		"args" : 1, # filename
-		"opts" : ("replace"),
+		"opts" : ("linear", "replace"),
 		"action" : cmd_upload,
-		"help_usage" : "filename [--replace]",
+		"help_usage" : "filename [--linear] [--replace]",
 		"help_descr" :
 			"uploads a file to the NXT by reading from standard input,"
-			" optionally replacing any file with the same name",
+			" optionally replacing any file with the same name."
+			" --linear is required, for example for .ric files.",
 	  },
 
 	"rm" :
