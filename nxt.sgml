@@ -1,0 +1,342 @@
+<!doctype book PUBLIC "-//OASIS//DTD DocBook V4.1//EN"
+	"http://www.oasis-open.org/docbook/xml/4.1/docbookx.dtd"
+[
+
+<!ENTITY gnu         "<acronym>GNU</acronym>">
+<!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+
+]>
+<book><title>nxtcmd</title>
+<reference id="manpages"><title>nxtcmd Man Page</title>
+
+<refentry id="nxtcmd">
+
+<refmeta>
+<refentrytitle>nxt</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>nxt</refname>
+<refpurpose>command-line utility for interfacing to a Lego Mindstorms NXT controller</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+<cmdsynopsis>
+<command>nxt</command>
+<arg><replaceable>subcmd</replaceable></arg>
+<arg><replaceable>options ...</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1><title>Description</title>
+<para>
+<command>nxt</command> lets you perform variety of operations related to the use of
+a Lego Mindstorms NXT controller: you can upload and download program and data files,
+list files already uploaded, delete files, convert to and from NXT-specific sound and
+graphics file formats, play sounds on the NXT, start a program running, and stop the
+running program.
+</para>
+<para>
+Each function is specified by a <firstterm>subcommand word</firstterm>, followed by
+options specific to that subcommand.
+</para>
+</refsect1>
+
+<refsect1><title>Subcommands</title>
+
+<refsect2><title>NXT-Filesystem-related</title>
+
+<variablelist>
+
+<varlistentry><term><literal>df</literal></term>
+<listitem><para>Shows the amount of free space in the NXT filesystem.</para></listitem>
+</varlistentry>
+
+<varlistentry><term><literal>down</literal> <replaceable>sourcefile</replaceable></term>
+<listitem><para>Downloads the specified <replaceable>sourcefile</replaceable>, writing its
+contents to standard output. Redirect this to a local file to save its contents there.</listitem></varlistentry>
+
+<varlistentry><term><literal>lls</literal> <replaceable>[pattern ...]</replaceable></term>
+<listitem><para></para></listitem></varlistentry>
+
+<varlistentry><term><literal>ls</literal> <replaceable>[pattern ...]</replaceable></term>
+<listitem><para>Lists information about files in the NXT filesystem matching the specified
+<replaceable>pattern</replaceable>s if specified, or all files if not. <command>ls</command>
+just lists their names, while <command>lls</command> gives information about space
+usage.</para>
+<para>The only wildcard character recognized in <replaceable>pattern</replaceable> is
+the asterisk "*".</para>
+</listitem></varlistentry>
+
+<varlistentry><term><literal>rm</literal> <replaceable>filename ...</replaceable></term>
+<listitem><para>Deletes the named files from the NXT filesystem.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>up</literal> <replaceable>dstfile</replaceable>
+<literal>[--linear]</literal> <literal>[--replace]</literal>
+</term>
+<listitem><para>Reads data from standard input and writes it to <replaceable>dstfile</replaceable>
+on the NXT controller. The --linear option says to create the output as a linear file
+(needed, for example, for .ric graphics files). The --replace option says to replace any
+existing file with the same name.</listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+<refsect2><title>Program Control</title>
+
+<variablelist>
+
+<varlistentry><term><literal>start</literal> <replaceable>progname</replaceable></term>
+<listitem><para>Loads and starts the program from the specified filename.</listitem></varlistentry>
+
+<varlistentry><term><literal>stop</literal></term>
+<listitem><para>Stops the currently-running program.</listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+<refsect2><title>Sound &amp; Sound Files</title>
+
+<variablelist>
+
+<varlistentry><term><literal>soundcvt</literal> <replaceable>infile</replaceable>
+<replaceable>outfile</replaceable> <literal>[--compressed]</literal></term>
+<listitem><para>Converts between the <literal>.wav</literal> file format and the
+<literal>.rso</literal> sampled-sound file format that the NXT can play. The
+<literal>--compressed</literal> option indicates that the output <literal>.rso</literal>
+file should be created in compressed format, which cuts its size by 50% at the expense
+of audio quality.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>soundfile</literal> <replaceable>filename</replaceable>
+<literal>[--loop=Y|N]</literal></term>
+<listitem><para>Tells the NXT controller to play the soundfile with the specified
+name. This can be either a sampled-sound file or a melody file; the NXT will auto-detect
+the format.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>tones</literal> <replaceable>notes</replaceable>
+<literal>[--notes]</literal> <replaceable>[</replaceable><literal>--tune=</literal><replaceable>tuning]</replaceable></term>
+<listitem><para>Tells the NXT controller to play the specified notes. See
+<title>Sound Command Format</title> for the notes format.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>tonesfile</literal> <replaceable>notes</replaceable>
+<literal>[--notes]</literal> <replaceable>[</replaceable><literal>--tune=</literal><replaceable>tuning]</replaceable></term>
+<listitem><para>Writes a melody file to standard output that, when uploaded to the
+NXT controller, will play the specified notes. See
+<title>Sound Command Format</title> for the notes format.</para></listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+<refsect2><title>Graphics Files</title>
+
+<variablelist>
+
+<varlistentry><term><literal>makeric</literal> <replaceable>outfile</replaceable></term>
+<listitem><para>Reads an XML description from standard input and writes the generated graphic
+file to <replaceable>outfile</replaceable>. See <title>Graphics XML File Format</title>
+for a description of the XML format.</listitem></varlistentry>
+
+<varlistentry><term><literal>unric</literal> <replaceable>infile</replaceable></term>
+<listitem><para>Analyzes the specified graphic <replaceable>infile</replaceable> and writes
+an XML description to standard output. See <title>Graphics XML File Format</title>
+for a description of the XML format.</listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+<refsect2><title>Miscellaneous</title>
+
+<variablelist>
+
+<varlistentry><term><literal>battery</literal></term>
+<listitem><para>Shows the battery level in millivolts.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>help</literal> <replaceable>[subcommand]</replaceable></term>
+<listitem><para>Gives a synopsis of how to use <command>nxt</command>, or of the specified
+<replaceable>subcommand</replaceable> if specified.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>hostid</literal></term>
+<listitem><para>Displays the unique host ID string for the
+controller.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>name</literal> <replaceable>[newhostname]</replaceable></term>
+<listitem><para>Displays the current host name, or changes it to
+<replaceable>newhostname</replaceable> if specified.</para></listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+</refsect1>
+
+<refsect1><title>Data Formats</title>
+
+<refsect2><title>Sound Command Format</title>
+
+<para>A tune is specified in the <literal>tones</literal> and <literal>tonesfile</literal>
+commands as a sequence of
+<replaceable>frequency</replaceable><literal>:</literal><replaceable>duration</replaceable>
+pairs. Each <replaceable>duration</replaceable> is always in integer milliseconds,
+while <replaceable>frequency</replaceable> may be either an integer frequency in Hz
+or a MIDI note number, being semitones where 60 = middle C (fractions allowed).</para>
+<para>The meaning of <replaceable>frequency</replaceable> is controlled by the
+<literal>--notes</literal> option; if present, then it is MIDI note numbers, otherwise
+it is Hz.</para>
+<para>The <literal>--tune=</literal><replaceable>notenr</replaceable><literal>:</literal><replaceable>frequency</replaceable>
+option controls the tuning used for MIDI note numbers;
+<replaceable>notenr</replaceable> is a reference note number, and
+<replaceable>frequency</replaceable> is the corresponding frequency in integer Hz.
+If omitted, it it as though <literal>--tune=69:440</literal> were specified. In
+other words, the A above middle C will have the frequency 440Hz (Concert Pitch).
+</para>
+
+</refsect2>
+
+<refsect2><title>Graphics XML File Format</title>
+
+<para>The XML representation corresponds exactly to the contents of the .ric file format,
+with each XML tag mapping directly to one opcode. The XML file begins with a
+<literal>&lt;ric&gt;</literal> tag and ends with a <literal>&lt;/ric&gt;</literal> tag.
+In-between are a sequence of any of the following tags:
+
+<variablelist>
+
+<varlistentry><term><literal>&lt;description options="0"</literal>
+<literal>width=</literal><replaceable>width</replaceable> <literal>height=</literal><replaceable>height</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Generates a description opcode, which defines the width and height of the
+graphic in pixels. If present, this should normally occur just once, at the start of the file.
+Ignored by the NXT firmware, but needed by some development tools.</para>
+</listitem></varlistentry>
+
+<varlistentry><term><literal>&lt;sprite data_addr=</literal><replaceable>data_addr</replaceable>
+<literal>rows=</literal><replaceable>rows</replaceable>
+<literal>rowbytes=</literal><replaceable>rowbytes</replaceable><literal>&gt;</literal>
+<replaceable>data</replaceable>
+<literal>&lt;/sprite&gt;</literal></term>
+<listitem><para>Defines a sprite. The <replaceable>data</replaceable> should consist of
+<replaceable>rows</replaceable> rows, separated by whitespace or line breaks. Each row
+should consist of <replaceable>rowbytes</replaceable>*8 contiguous non-whitespace characters,
+each representing a pixel. A "." character represents a 0, and any other non-whitespace character
+represents a 1.
+</listitem></varlistentry>
+
+<varlistentry><term><literal>&lt;varmap data_addr=</literal><replaceable>data_addr</replaceable>
+<literal>count=</literal><replaceable>count</replaceable>&gt;
+<replaceable>domvalue</replaceable><literal>:</literal><replaceable>rangevalue ...</replaceable>
+<literal>&lt;/varmap&gt;</literal></term>
+<listitem><para>Defines a varmap. <replaceable>count</replaceable> is the number of
+<replaceable>domvalue</replaceable><literal>:</literal><replaceable>rangevalue</replaceable>
+pairs. Each <replaceable>domvalue</replaceable> and <replaceable>rangevalue</replaceable>
+is an unsigned integer; the <replaceable>domvalue</replaceable>s should be in increasing
+order. The varmap is used to map an argument value by scanning the
+<replaceable>domvalue</replaceable>s in sequence to find the largest one that does not
+exceed the argument; the result is then the linear interpolation between this
+<replaceable>rangevalue</replaceable> and the next one according to the distance of
+the argument between the corresponding <replaceable>domvalue</replaceable>s.
+</listitem></varlistentry>
+
+<varlistentry><term><literal>&lt;copybits options="0"</literal>
+<literal>data_addr=</literal><replaceable>data_addr</replaceable>
+<literal>src_x=</literal><replaceable>src_x</replaceable>
+<literal>src_y=</literal><replaceable>src_y</replaceable>
+<literal>width=</literal><replaceable>width</replaceable>
+<literal>height=</literal><replaceable>height</replaceable>
+<literal>dst_x=</literal><replaceable>dst_x</replaceable>
+<literal>dst_y=</literal><replaceable>dst_y</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Renders the specified portion of the sprite previously defined in
+the slot <replaceable>data_addr</replaceable> at the specified location.
+The <replaceable>src_x</replaceable>, <replaceable>src_y</replaceable>,
+<replaceable>width</replaceable>, <replaceable>height</replaceable>,
+<replaceable>dst_x</replaceable> and <replaceable>dst_y</replaceable> arguments
+can be varmapped.</para></listitem></varlistentry>
+
+<varlistentry><term><literal>&lt;pixel options="0"</literal>
+<literal>pt_x=</literal><replaceable>pt_x</replaceable>
+<literal>pt_y=</literal><replaceable>pt_y</replaceable>
+<literal>value=</literal><replaceable>value</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Sets or clars a single pixel at the specified location. The
+<replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable> and
+<replaceable>value</replaceable> arguments can be varmapped.</varlistentry>
+
+<varlistentry><term><literal>&lt;line options="0"</literal>
+<literal>pt1_x=</literal><replaceable>pt1_x</replaceable>
+<literal>pt1_y=</literal><replaceable>pt1_y</replaceable>
+<literal>pt2_x=</literal><replaceable>pt2_x</replaceable>
+<literal>pt2_y=</literal><replaceable>pt2_y</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Draws a line between <replaceable>pt1</replaceable> and
+<replaceable>pt2</replaceable>. The <replaceable>pt1_x</replaceable>,
+<replaceable>pt1_y</replaceable>, <replaceable>pt2_x</replaceable>
+and <replaceable>pt2_y</replaceable> arguments can be varmapped.</para></listitem>
+</varlistentry>
+
+<varlistentry><term><literal>&lt;rect options="0"</literal>
+<literal>pt_x=</literal><replaceable>pt_x</replaceable>
+<literal>pt_y=</literal><replaceable>pt_y</replaceable>
+<literal>width=</literal><replaceable>width</replaceable>
+<literal>height=</literal><replaceable>height</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Outlines a rectangle with the specified position and dimensions.
+The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable>,
+<replaceable>width</replaceable> and <replaceable>height</replaceable>
+arguments can be varmapped.</para></listitem></varlistentry>
+
+<!-- <varlistentry><term><literal>&lt;circle  options="0"</literal>
+<literal>pt_x=</literal><replaceable>pt_x</replaceable> 
+<literal>pt_y=</literal><replaceable>pt_y</replaceable> 
+<literal>radius=</literal><replaceable>radius</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Outlines a circle with the specified centre and radius.
+The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable> and
+<replaceable>radius</replaceable> arguments can be varmapped.</para></listitem>
+</varlistentry> -->
+
+<varlistentry><term><literal>&lt;numbox options="0"</literal>
+<literal>pt_x=</literal><replaceable>pt_x</replaceable> 
+<literal>pt_y=</literal><replaceable>pt_y</replaceable> 
+<literal>value=</literal><replaceable>value</replaceable><literal>/&gt;</literal></term>
+<listitem><para>Displays <replaceable>value</replaceable> as a decimal integer string
+at the specified location. The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable>
+and <replaceable>value</replaceable> arguments can be varmapped.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>Notes about attribute values:</para>
+
+<variablelist>
+
+<varlistentry><term><replaceable>data_addr</replaceable></term>
+<listitem><para>This is an integer from 1 to 10 inclusive. It specifies a slot
+into which can be inserted either a sprite or a varmap for later reference.</para>
+</listitem></varlistentry>
+
+<varlistentry><term>varmapped argument values</term>
+<listitem><para>In the above descriptions of XML tags, attribute values can be
+specified as literal unsigned integer values less than 4096. Integer values 4096
+(0x1000) or greater represent <firstterm>varmapped</firstterm> values, as follows:
+<itemizedlist>
+<listitem>Bits 0 .. 7 are used as a zero-based index into the argument array passed to the
+<literal>GraphicOutEx</literal> system call, to obtain the argument value.</listitem>
+<listitem>Bits 8 .. 11, if nonzero, are used to select a <replaceable>data_addr</replaceable>
+slot. This must have a &lt;varmap&gt; tag previously associated with it, through which
+the argument value is mapped. Or if these bits are zero, then the argument value is used
+as is.</listitem>
+<listitem>The argument value, varmapped as appropriate, is dynamically substituted
+for the attribute value.</listitem>
+</itemizedlist>
+</para>
+</listitem></varlistentry>
+
+</variablelist>
+
+</refsect2>
+
+</refsect1>
+
+</refentry>
+
+</reference>
+</book>
