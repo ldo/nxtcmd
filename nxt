@@ -64,7 +64,7 @@ def QuoteResolvable(val) :
 	"""encodes integer val for display as an XML attribute value, using hex encoding
 	for varmap references."""
 	if (val & 0xF000) != 0 :
-		val = "0x%04x" % val
+		val = "%#04x" % val
 	#end if
 	return QuoteXMLAttr(val)
 #end QuoteResolvable
