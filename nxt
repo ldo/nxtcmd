@@ -13,8 +13,8 @@
 #-
 
 from __future__ import \
-	division, \
-	with_statement
+    division, \
+    with_statement
 import sys
 import struct
 import subprocess
@@ -30,18 +30,18 @@ import nxt.error
 #-
 
 def structread(fromfile, decode_struct) :
-	"""reads sufficient bytes from fromfile to be unpacked according to
-	decode_struct, and returns the unpacked results."""
-	return struct.unpack(decode_struct, fromfile.read(struct.calcsize(decode_struct)))
+    """reads sufficient bytes from fromfile to be unpacked according to
+    decode_struct, and returns the unpacked results."""
+    return struct.unpack(decode_struct, fromfile.read(struct.calcsize(decode_struct)))
 #end structread
 
 adpcm_step = tuple \
-	(( # IMA-ADPCM sample-step table truncated to 8 bits (38 entries)
-		7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
-		19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
-		50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
-		130, 143, 157, 173, 190, 209, 230, 253,
-	))
+    (( # IMA-ADPCM sample-step table truncated to 8 bits (38 entries)
+        7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
+        19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
+        50, 55, 60, 66, 73, 80, 88, 97, 107, 118,
+        130, 143, 157, 173, 190, 209, 230, 253,
+    ))
 
 # RIC file opcodes
 IMG_DESCRIPTION_ID = 0 # ignored by firmware
@@ -55,18 +55,18 @@ IMG_CIRCLE_ID = 7 # not implemented by current (1.2x) firmware
 IMG_NUMBOX_ID = 8
 
 def QuoteXMLAttr(val) :
-	"""encodes val in a form suitable for use as an XML attribute value, complete
-	with quotation marks."""
-	return xml.sax.saxutils.quoteattr(str(val))
+    """encodes val in a form suitable for use as an XML attribute value, complete
+    with quotation marks."""
+    return xml.sax.saxutils.quoteattr(str(val))
 #end QuoteXMLAttr
 
 def QuoteResolvable(val) :
-	"""encodes integer val for display as an XML attribute value, using hex encoding
-	for varmap references."""
-	if (val & 0xF000) != 0 :
-		val = "%#04x" % val
-	#end if
-	return QuoteXMLAttr(val)
+    """encodes integer val for display as an XML attribute value, using hex encoding
+    for varmap references."""
+    if (val & 0xF000) != 0 :
+        val = "%#04x" % val
+    #end if
+    return QuoteXMLAttr(val)
 #end QuoteResolvable
 
 #+
@@ -74,46 +74,46 @@ def QuoteResolvable(val) :
 #-
 
 def get_bool(boolstr, default) :
-	"""interprets boolstr as yes/no, true/false etc."""
-	result = default # initial assumption
-	if boolstr != None :
-		boolstr = boolstr[0].lower()
-		if boolstr == "y" or boolstr == "t" or boolstr == "1" :
-			result = True
-		elif boolstr == "n" or boolstr == "f" or boolstr == "0" :
-			result = False
-		#end if
-	#end if
-	return result
+    """interprets boolstr as yes/no, true/false etc."""
+    result = default # initial assumption
+    if boolstr != None :
+        boolstr = boolstr[0].lower()
+        if boolstr == "y" or boolstr == "t" or boolstr == "1" :
+            result = True
+        elif boolstr == "n" or boolstr == "f" or boolstr == "0" :
+            result = False
+        #end if
+    #end if
+    return result
 #end get_bool
 
 def make_note_converter(opts) :
-	"""returns a note-converter function which interprets a note spec
-	as a frequency or a note number, depending on opts. The options which
-	may be present are:
+    """returns a note-converter function which interprets a note spec
+    as a frequency or a note number, depending on opts. The options which
+    may be present are:
 
-		--notes
-			if present, then interpret the frequency spec as a MIDI note
-			number (semitone steps with 60 = middle C). Fractions are allowed,
-			but the computed frequency is always an integer.
-			If absent, then interpret the frequency spec as integer Hz.
-		--tune=notenr:freq
-			specifies the tuning for note numbers, as a reference note number
-			and the corresponding reference frequency. If omitted, the default is
-			69:440 (A above middle C = 440Hz, also known as Concert Pitch).
+        --notes
+            if present, then interpret the frequency spec as a MIDI note
+            number (semitone steps with 60 = middle C). Fractions are allowed,
+            but the computed frequency is always an integer.
+            If absent, then interpret the frequency spec as integer Hz.
+        --tune=notenr:freq
+            specifies the tuning for note numbers, as a reference note number
+            and the corresponding reference frequency. If omitted, the default is
+            69:440 (A above middle C = 440Hz, also known as Concert Pitch).
 
-	"""
-	if opts.has_key("notes") :
-		refnote, reffreq = opts.get("tune", "69:440").split(":", 1)
-		refnote = float(refnote)
-		reffreq = float(reffreq)
-		def notefn(note) :
-			return int(round(2 ** ((float(note) - refnote) / 12) * reffreq))
-		#end notefn
-	else :
-		notefn = int # straight frequency
-	#end if
-	return notefn
+    """
+    if opts.has_key("notes") :
+        refnote, reffreq = opts.get("tune", "69:440").split(":", 1)
+        refnote = float(refnote)
+        reffreq = float(reffreq)
+        def notefn(note) :
+            return int(round(2 ** ((float(note) - refnote) / 12) * reffreq))
+        #end notefn
+    else :
+        notefn = int # straight frequency
+    #end if
+    return notefn
 #end make_note_converter
 
 #+
@@ -132,839 +132,839 @@ sock = None # connection to NXT controller
 #-
 
 def cmd_help(args, opts) :
-	"""shows the user the help description for a command, or for the help
-	command itself if no valid command is given."""
-	command_candidates = None
-	command_match = None
-	if len(args) == 1 :
-		cmd = args[0]
-		if not recognized_commands.has_key(cmd) :
-			command_match = cmd
-			cmd = None
-			command_candidates = list \
-			  (
-				c for c in recognized_commands.keys()
-				if fnmatch.fnmatch(c, command_match)
-			  )
-		#end if
-	else :
-		cmd = "help"
-		command_candidates = recognized_commands.keys()
-	#end if
-	if cmd != None :
-		sys.stderr.write \
-		  (
-				"Usage:\n\n    %s %s %s\n\n%s.\n"
-			%
-				(
-					sys.argv[0],
-					cmd,
-					recognized_commands[cmd]["help_usage"],
-					recognized_commands[cmd]["help_descr"],
-				)
-		  )
-	#end if
-	if command_candidates != None :
-		if len(command_candidates) != 0 :
-			sys.stderr.write \
-			  (
-					"\nValid commands%(matching)s are: %(commands)s.\n"
-				%
-					{
-						"matching" :
-							["", " matching \"%s\"" % command_match][command_match != None],
-						"commands" : ", ".join(sorted(command_candidates)),
-					}
-			  )
-		else :
-			sys.stderr.write("No commands matching \"%s\".\n" % command_match)
-		#end if
-	#end if
+    """shows the user the help description for a command, or for the help
+    command itself if no valid command is given."""
+    command_candidates = None
+    command_match = None
+    if len(args) == 1 :
+        cmd = args[0]
+        if not recognized_commands.has_key(cmd) :
+            command_match = cmd
+            cmd = None
+            command_candidates = list \
+              (
+                c for c in recognized_commands.keys()
+                if fnmatch.fnmatch(c, command_match)
+              )
+        #end if
+    else :
+        cmd = "help"
+        command_candidates = recognized_commands.keys()
+    #end if
+    if cmd != None :
+        sys.stderr.write \
+          (
+                "Usage:\n\n    %s %s %s\n\n%s.\n"
+            %
+                (
+                    sys.argv[0],
+                    cmd,
+                    recognized_commands[cmd]["help_usage"],
+                    recognized_commands[cmd]["help_descr"],
+                )
+          )
+    #end if
+    if command_candidates != None :
+        if len(command_candidates) != 0 :
+            sys.stderr.write \
+              (
+                    "\nValid commands%(matching)s are: %(commands)s.\n"
+                %
+                    {
+                        "matching" :
+                            ["", " matching \"%s\"" % command_match][command_match != None],
+                        "commands" : ", ".join(sorted(command_candidates)),
+                    }
+              )
+        else :
+            sys.stderr.write("No commands matching \"%s\".\n" % command_match)
+        #end if
+    #end if
 #end cmd_help
 
 def cmd_name(args, opts) :
-	"""gets the existing controller name or sets a new name."""
-	old_name = brick.get_device_info()[0]
-	if len(args) > 0 :
-		new_name = args[0][:len(old_name)]
-		brick.set_brick_name(new_name + "\x00" * (len(old_name) - len(new_name)))
-	else :
-		sys.stdout.write(old_name.rstrip("\x00") + "\n")
-	#end if
+    """gets the existing controller name or sets a new name."""
+    old_name = brick.get_device_info()[0]
+    if len(args) > 0 :
+        new_name = args[0][:len(old_name)]
+        brick.set_brick_name(new_name + "\x00" * (len(old_name) - len(new_name)))
+    else :
+        sys.stdout.write(old_name.rstrip("\x00") + "\n")
+    #end if
 #end cmd_name
 
 def cmd_hostid(args, opts) :
-	"""gets the controller host ID."""
-	sys.stdout.write(brick.get_device_info()[1] + "\n")
+    """gets the controller host ID."""
+    sys.stdout.write(brick.get_device_info()[1] + "\n")
 #end cmd_hostid
 
 def cmd_battery_level(args, opts) :
-	"""shows the remaining battery level."""
-	sys.stdout.write("Battery level: %dmV\n" % brick.get_battery_level())
+    """shows the remaining battery level."""
+    sys.stdout.write("Battery level: %dmV\n" % brick.get_battery_level())
 #end cmd_battery_level
 
 def cmd_df(args, opts) :
-	"""shows available free space."""
-	sys.stdout.write("Available: %d\n" % brick.get_device_info()[3])
+    """shows available free space."""
+    sys.stdout.write("Available: %d\n" % brick.get_device_info()[3])
 #end cmd_df
 
 def cmd_ls(args, opts) :
-	"""lists names of files matching one or more patterns."""
-	if len(args) == 0 :
-		args = ["*.*"]
-	#end if
-	for p in args :
-		try :
-			for filename, _ in nxt.brick.FileFinder(brick, p) :
-				sys.stdout.write("%s\n" % filename.rstrip("\x00"))
-			#end for
-		except nxt.error.FileNotFound :
-			pass # go on to the next pattern
-		#end try
-	#end for
+    """lists names of files matching one or more patterns."""
+    if len(args) == 0 :
+        args = ["*.*"]
+    #end if
+    for p in args :
+        try :
+            for filename, _ in nxt.brick.FileFinder(brick, p) :
+                sys.stdout.write("%s\n" % filename.rstrip("\x00"))
+            #end for
+        except nxt.error.FileNotFound :
+            pass # go on to the next pattern
+        #end try
+    #end for
 #end cmd_ls
 
 def cmd_lls(args, opts) :
-	"""lists details of files matching one or more patterns."""
-	if len(args) == 0 :
-		args = ["*.*"]
-	#end if
-	nxt_sector_size = 256
-	totalsize = 0
-	totalalloc = 0
-	for p in args :
-		try :
-			for filename, filesize in nxt.brick.FileFinder(brick, p) :
-				allocsize = (filesize + nxt_sector_size - 1) // nxt_sector_size * nxt_sector_size
-				sys.stdout.write("%6d/%6d %s\n" % (filesize, allocsize, filename.rstrip("\x00")))
-				totalsize += filesize
-				totalalloc += allocsize
-			#end for
-		except nxt.error.FileNotFound :
-			pass # go on to the next pattern
-		#end try
-	#end for
-	sys.stdout.write("%6d/%6d\n" % (totalsize, totalalloc))
+    """lists details of files matching one or more patterns."""
+    if len(args) == 0 :
+        args = ["*.*"]
+    #end if
+    nxt_sector_size = 256
+    totalsize = 0
+    totalalloc = 0
+    for p in args :
+        try :
+            for filename, filesize in nxt.brick.FileFinder(brick, p) :
+                allocsize = (filesize + nxt_sector_size - 1) // nxt_sector_size * nxt_sector_size
+                sys.stdout.write("%6d/%6d %s\n" % (filesize, allocsize, filename.rstrip("\x00")))
+                totalsize += filesize
+                totalalloc += allocsize
+            #end for
+        except nxt.error.FileNotFound :
+            pass # go on to the next pattern
+        #end try
+    #end for
+    sys.stdout.write("%6d/%6d\n" % (totalsize, totalalloc))
 #end cmd_lls
 
 def cmd_download(args, opts) :
-	"""downloads a file to standard output."""
-	with nxt.brick.FileReader(brick, args[0]) as thefile :
-		for block in thefile :
-			sys.stdout.write(block)
-		#end for
-	#end with
+    """downloads a file to standard output."""
+    with nxt.brick.FileReader(brick, args[0]) as thefile :
+        for block in thefile :
+            sys.stdout.write(block)
+        #end for
+    #end with
 #end cmd_download
 
 def cmd_upload(args, opts) :
-	"""uploads a file from standard input."""
-	filename = args[0]
-	if opts.has_key("replace") :
-		try :
-			brick.delete(filename)
-		except nxt.error.FileNotFound :
-			pass
-		#end try
-	#end if
-	data = sys.stdin.read()
-	up = (brick.open_write, brick.open_write_linear)[opts.has_key("linear")](filename, len(data))
-	while True :
-		to_write = min(len(data), brick.sock.bsize)
-		if to_write == 0 :
-			break
-		brick.write(up, data[:to_write])
-		data = data[to_write:]
-	#end while
-	brick.close(up)
+    """uploads a file from standard input."""
+    filename = args[0]
+    if opts.has_key("replace") :
+        try :
+            brick.delete(filename)
+        except nxt.error.FileNotFound :
+            pass
+        #end try
+    #end if
+    data = sys.stdin.read()
+    up = (brick.open_write, brick.open_write_linear)[opts.has_key("linear")](filename, len(data))
+    while True :
+        to_write = min(len(data), brick.sock.bsize)
+        if to_write == 0 :
+            break
+        brick.write(up, data[:to_write])
+        data = data[to_write:]
+    #end while
+    brick.close(up)
 #end cmd_upload
 
 def cmd_rm(args, opts) :
-	"""deletes the files with the specified names."""
-	for filename in args :
-		brick.delete(filename)
-	#end for
+    """deletes the files with the specified names."""
+    for filename in args :
+        brick.delete(filename)
+    #end for
 #end cmd_rm
 
 def cmd_soundfile(args, opts) :
-	"""plays a soundfile."""
-	brick.play_sound_file \
-	  (
-		get_bool(opts.get("loop"), False),
-		args[0]
-	  )
+    """plays a soundfile."""
+    brick.play_sound_file \
+      (
+        get_bool(opts.get("loop"), False),
+        args[0]
+      )
 #end cmd_soundfile
 
 def cmd_playtones(args, opts) :
-	"""plays one or more tones."""
-	notefn = make_note_converter(opts)
-	for arg in args :
-		freq, dur = arg.split(":", 1)
-		brick.play_tone_and_wait(notefn(freq), int(dur))
-	#end while
+    """plays one or more tones."""
+    notefn = make_note_converter(opts)
+    for arg in args :
+        freq, dur = arg.split(":", 1)
+        brick.play_tone_and_wait(notefn(freq), int(dur))
+    #end while
 #end cmd_playtones
 
 def cmd_tonesfile(args, opts) :
-	"""encodes a sequence of tones into a melody file and writes it to standard output.
-	Various websites describe this as an .rmd file, but the NXT on-board interface
-	will not show it to the user as a sound file unless it has an .rso extension.
-	Of course, programmatic commands can access it and play it regardless."""
-	notefn = make_note_converter(opts)
-	data = ""
-	for arg in args :
-		freq, dur = arg.split(":", 1)
-		data += struct.pack(">HH", notefn(freq), int(dur))
-	#end while
-	sys.stdout.write(struct.pack(">BBHHH", 6, 0, len(data), 0, 0))
-	sys.stdout.write(data)
+    """encodes a sequence of tones into a melody file and writes it to standard output.
+    Various websites describe this as an .rmd file, but the NXT on-board interface
+    will not show it to the user as a sound file unless it has an .rso extension.
+    Of course, programmatic commands can access it and play it regardless."""
+    notefn = make_note_converter(opts)
+    data = ""
+    for arg in args :
+        freq, dur = arg.split(":", 1)
+        data += struct.pack(">HH", notefn(freq), int(dur))
+    #end while
+    sys.stdout.write(struct.pack(">BBHHH", 6, 0, len(data), 0, 0))
+    sys.stdout.write(data)
 #end cmd_tonesfile
 
 def cmd_soundcvt(args, opts) :
-	"""converts between .rso and .wav file formats with the help of sox."""
-	infilename, outfilename = args
-	rso_version = 1
-	if infilename.endswith(".rso") and outfilename.endswith(".wav") :
-		infile = open(infilename, "r")
-		version, compressed, length, sample_rate, play_mode = structread(infile, ">BBHHH")
-		if version != rso_version :
-			raise RuntimeError("bad .rso file version")
-		#end if
-		compressed = compressed != 0
-		if compressed :
-			# my adaptation of the IMA-ADPCM decoder algorithm.
-			# Might be slower than C code, but the files won't be big anyway.
-			sample = 128 # always start at zero point
-			index = 0
-			sounddata = ""
-			while True :
-				inbyte = infile.read(1)
-				if len(inbyte) == 0 :
-					break
-				inbyte = ord(inbyte)
-				nibble = 4
-				while True : # do each nibble
-					step = adpcm_step[index]
-					delta = inbyte >> nibble & 15
-					sign = (+1, -1)[(delta & 8) != 0]
-					delta &= 7
-					if delta >= 4 :
-						index += (delta - 3) * 2
-						if index > 37 :
-							index = 37
-						#end if
-					elif index > 0 :
-						index -= 1
-					#end if
-					sample += \
-						(
-							(
-								(step >> 3)
-							+
-								(step >> 2) * ((delta & 1) != 0)
-							+
-								(step >> 1) * ((delta & 2) != 0)
-							+
-								step * ((delta & 4) != 0)
-							) # almost, but not quite step * (2 * delta + 1) // 4
-						*
-							sign
-						)
-					if sample > 255 :
-						sample = 255
-					elif sample < 0 :
-						sample = 0
-					#end if
-					sounddata += chr(sample)
-					if nibble == 0 :
-						break
-					nibble = 0
-				#end while
-			#end while
-		else :
-			sounddata = infile.read()
-		#end if
-		# use sox to properly construct output .wav file
-		child = subprocess.Popen \
-		  (
-			args =
-				(
-					"sox",
-					"-t", "raw",
-					"-b", "8",
-					"-c", "1",
-					"-e", "unsigned-integer",
-					"-r", "%d" % sample_rate,
-					"/dev/stdin",
-					outfilename,
-				),
-			stdin = subprocess.PIPE,
-			close_fds = True
-		  )
-		child.communicate(sounddata)
-	elif infilename.endswith(".wav") and outfilename.endswith(".rso") :
-		sample_rate = 8000
-		play_mode = 0
-		compressed = opts.has_key("compressed")
-		child = subprocess.Popen \
-		  (
-			args =
-				(
-					"sox",
-					infilename,
-					"-t", "raw",
-					"-b", "8",
-					"-c", "1",
-					"-e", "unsigned-integer",
-					"-r", "%d" % sample_rate,
-					"/dev/stdout",
-				),
-			stdout = subprocess.PIPE,
-			close_fds = True
-		  )
-		sounddata, _ = child.communicate()
-		if len(sounddata) > 65535 * (1 + compressed) :
-			raise RuntimeError("sound data cannot exceed 65535 bytes")
-		#end if
-		outfile = open(outfilename, "w")
-		if compressed :
-			# my adaptation of the IMA-ADPCM encoder algorithm.
-			# Might be slower than C code, but the files won't be big anyway.
-			index = 0
-			prevsample = 128 # always start at zero point
-			nibble = 0
-			outbyte = None
-			data = ""
-			i = 0
-			while i < len(sounddata) :
-				diff = ord(sounddata[i]) - prevsample
-				i += 1
-				step = adpcm_step[index]
-				sign = 8 * (diff < 0)
-				diff = abs(diff)
-				mask = 4
-				encode = 0
-				vpdiff = 0
-				while mask > 0 :
-					if diff >= step :
-						encode |= mask
-						diff -= step
-						vpdiff += step
-					#end if
-					mask >>= 1
-					step >>= 1
-				#end while
-				vpdiff += step
-				prevsample = max(min(prevsample + vpdiff * (-1, +1)[sign == 0], 255), 0)
-				if encode >= 4 :
-					index += (encode - 3) * 2
-					if index > 37 :
-						index = 37
-					#end if
-				elif index > 0 :
-					index -= 1
-				#end if
-				if outbyte == None :
-					outbyte = 0
-				#end if
-				nibble = 4 - nibble
-				outbyte |= (encode | sign) << nibble
-				if nibble == 0 or i == len(sounddata) :
-					data += chr(outbyte)
-					outbyte = None
-				#end if
-			#end while
-		else :
-			data = sounddata
-		#end if
-		outfile.write(struct.pack(">BBHHH", rso_version, compressed, len(data), sample_rate, play_mode))
-		outfile.write(data)
-		outfile.flush()
-		outfile.close()
-	else :
-		raise getopt.GetoptError("one filename must end in .rso and the other in .wav")
-	#end if
+    """converts between .rso and .wav file formats with the help of sox."""
+    infilename, outfilename = args
+    rso_version = 1
+    if infilename.endswith(".rso") and outfilename.endswith(".wav") :
+        infile = open(infilename, "r")
+        version, compressed, length, sample_rate, play_mode = structread(infile, ">BBHHH")
+        if version != rso_version :
+            raise RuntimeError("bad .rso file version")
+        #end if
+        compressed = compressed != 0
+        if compressed :
+            # my adaptation of the IMA-ADPCM decoder algorithm.
+            # Might be slower than C code, but the files won't be big anyway.
+            sample = 128 # always start at zero point
+            index = 0
+            sounddata = ""
+            while True :
+                inbyte = infile.read(1)
+                if len(inbyte) == 0 :
+                    break
+                inbyte = ord(inbyte)
+                nibble = 4
+                while True : # do each nibble
+                    step = adpcm_step[index]
+                    delta = inbyte >> nibble & 15
+                    sign = (+1, -1)[(delta & 8) != 0]
+                    delta &= 7
+                    if delta >= 4 :
+                        index += (delta - 3) * 2
+                        if index > 37 :
+                            index = 37
+                        #end if
+                    elif index > 0 :
+                        index -= 1
+                    #end if
+                    sample += \
+                        (
+                            (
+                                (step >> 3)
+                            +
+                                (step >> 2) * ((delta & 1) != 0)
+                            +
+                                (step >> 1) * ((delta & 2) != 0)
+                            +
+                                step * ((delta & 4) != 0)
+                            ) # almost, but not quite step * (2 * delta + 1) // 4
+                        *
+                            sign
+                        )
+                    if sample > 255 :
+                        sample = 255
+                    elif sample < 0 :
+                        sample = 0
+                    #end if
+                    sounddata += chr(sample)
+                    if nibble == 0 :
+                        break
+                    nibble = 0
+                #end while
+            #end while
+        else :
+            sounddata = infile.read()
+        #end if
+        # use sox to properly construct output .wav file
+        child = subprocess.Popen \
+          (
+            args =
+                (
+                    "sox",
+                    "-t", "raw",
+                    "-b", "8",
+                    "-c", "1",
+                    "-e", "unsigned-integer",
+                    "-r", "%d" % sample_rate,
+                    "/dev/stdin",
+                    outfilename,
+                ),
+            stdin = subprocess.PIPE,
+            close_fds = True
+          )
+        child.communicate(sounddata)
+    elif infilename.endswith(".wav") and outfilename.endswith(".rso") :
+        sample_rate = 8000
+        play_mode = 0
+        compressed = opts.has_key("compressed")
+        child = subprocess.Popen \
+          (
+            args =
+                (
+                    "sox",
+                    infilename,
+                    "-t", "raw",
+                    "-b", "8",
+                    "-c", "1",
+                    "-e", "unsigned-integer",
+                    "-r", "%d" % sample_rate,
+                    "/dev/stdout",
+                ),
+            stdout = subprocess.PIPE,
+            close_fds = True
+          )
+        sounddata, _ = child.communicate()
+        if len(sounddata) > 65535 * (1 + compressed) :
+            raise RuntimeError("sound data cannot exceed 65535 bytes")
+        #end if
+        outfile = open(outfilename, "w")
+        if compressed :
+            # my adaptation of the IMA-ADPCM encoder algorithm.
+            # Might be slower than C code, but the files won't be big anyway.
+            index = 0
+            prevsample = 128 # always start at zero point
+            nibble = 0
+            outbyte = None
+            data = ""
+            i = 0
+            while i < len(sounddata) :
+                diff = ord(sounddata[i]) - prevsample
+                i += 1
+                step = adpcm_step[index]
+                sign = 8 * (diff < 0)
+                diff = abs(diff)
+                mask = 4
+                encode = 0
+                vpdiff = 0
+                while mask > 0 :
+                    if diff >= step :
+                        encode |= mask
+                        diff -= step
+                        vpdiff += step
+                    #end if
+                    mask >>= 1
+                    step >>= 1
+                #end while
+                vpdiff += step
+                prevsample = max(min(prevsample + vpdiff * (-1, +1)[sign == 0], 255), 0)
+                if encode >= 4 :
+                    index += (encode - 3) * 2
+                    if index > 37 :
+                        index = 37
+                    #end if
+                elif index > 0 :
+                    index -= 1
+                #end if
+                if outbyte == None :
+                    outbyte = 0
+                #end if
+                nibble = 4 - nibble
+                outbyte |= (encode | sign) << nibble
+                if nibble == 0 or i == len(sounddata) :
+                    data += chr(outbyte)
+                    outbyte = None
+                #end if
+            #end while
+        else :
+            data = sounddata
+        #end if
+        outfile.write(struct.pack(">BBHHH", rso_version, compressed, len(data), sample_rate, play_mode))
+        outfile.write(data)
+        outfile.flush()
+        outfile.close()
+    else :
+        raise getopt.GetoptError("one filename must end in .rso and the other in .wav")
+    #end if
 #end cmd_soundcvt
 
 def cmd_makeric(args, opts) :
-	"""compiles an XML description from standard input into a .ric file."""
+    """compiles an XML description from standard input into a .ric file."""
 
-	ricfile = None
-	parse_state = \
-		{
-			"in_ric" : False,
-			"in_tag" : None,
-			"content" : None,
-			"data_addr_defined" : set(), # should also distinguish between sprite entries and varmap entries
-		}
+    ricfile = None
+    parse_state = \
+        {
+            "in_ric" : False,
+            "in_tag" : None,
+            "content" : None,
+            "data_addr_defined" : set(), # should also distinguish between sprite entries and varmap entries
+        }
 
-	def write_op(op, data) :
-		ricfile.write \
-		  (
-			struct.pack("<HH", len(data) + 2, op) + data
-		  )
-	#end write_op
+    def write_op(op, data) :
+        ricfile.write \
+          (
+            struct.pack("<HH", len(data) + 2, op) + data
+          )
+    #end write_op
 
-	def validate_data_addr(data_addr, new) :
-		if new or (data_addr & 0xF000) == 0 :
-			assert data_addr >= 1 and data_addr <= 10, "data_addr out of range"
-			assert new != (data_addr in parse_state["data_addr_defined"]), "data_addr " + ("not", "already")[new] + " defined"
-		#end if
-		if new :
-			parse_state["data_addr_defined"].add(data_addr)
-		elif (data_addr & 0xF000) != 0 :
-			assert (data_addr & 0x0F00) >> 8 in parse_state["data_addr_defined"], "data_addr map not defined"
-		#end if
-	#end validate_data_addr
+    def validate_data_addr(data_addr, new) :
+        if new or (data_addr & 0xF000) == 0 :
+            assert data_addr >= 1 and data_addr <= 10, "data_addr out of range"
+            assert new != (data_addr in parse_state["data_addr_defined"]), "data_addr " + ("not", "already")[new] + " defined"
+        #end if
+        if new :
+            parse_state["data_addr_defined"].add(data_addr)
+        elif (data_addr & 0xF000) != 0 :
+            assert (data_addr & 0x0F00) >> 8 in parse_state["data_addr_defined"], "data_addr map not defined"
+        #end if
+    #end validate_data_addr
 
-	def get_resolvable(attrs, key) :
-		"""interprets an attribute value as either a plain integer or a varmap reference."""
-		value = int(attrs[key], 0) # varmap references are just hex integers for now
-		if (value & 0xF000) != 0 :
-			assert (value & 0x0F00) >> 8 in parse_state["data_addr_defined"] | set((0,)), "data_addr map not defined"
-		#end if
-		return value
-	#end get_resolvable
+    def get_resolvable(attrs, key) :
+        """interprets an attribute value as either a plain integer or a varmap reference."""
+        value = int(attrs[key], 0) # varmap references are just hex integers for now
+        if (value & 0xF000) != 0 :
+            assert (value & 0x0F00) >> 8 in parse_state["data_addr_defined"] | set((0,)), "data_addr map not defined"
+        #end if
+        return value
+    #end get_resolvable
 
-	def handle_description(name, attrs) :
-		write_op \
-		  (
-			IMG_DESCRIPTION_ID,
-			struct.pack
-			  (
-				"<HHH",
-				int(attrs["options"]),
-				int(attrs["width"]),
-				int(attrs["height"]),
-			  )
-		  )
-	#end handle_description
+    def handle_description(name, attrs) :
+        write_op \
+          (
+            IMG_DESCRIPTION_ID,
+            struct.pack
+              (
+                "<HHH",
+                int(attrs["options"]),
+                int(attrs["width"]),
+                int(attrs["height"]),
+              )
+          )
+    #end handle_description
 
-	def handle_sprite_begin(name, attrs) :
-		parse_state["attrs"] = \
-			{
-				"data_addr" : int(attrs["data_addr"]),
-				"rows" : int(attrs["rows"]),
-				"rowbytes" : int(attrs["rowbytes"]),
-			}
-		validate_data_addr(parse_state["attrs"]["data_addr"], True)
-		assert (parse_state["attrs"]["rowbytes"] & 1) == 0, "rowbytes must be even"
-	#end handle_sprite_begin
+    def handle_sprite_begin(name, attrs) :
+        parse_state["attrs"] = \
+            {
+                "data_addr" : int(attrs["data_addr"]),
+                "rows" : int(attrs["rows"]),
+                "rowbytes" : int(attrs["rowbytes"]),
+            }
+        validate_data_addr(parse_state["attrs"]["data_addr"], True)
+        assert (parse_state["attrs"]["rowbytes"] & 1) == 0, "rowbytes must be even"
+    #end handle_sprite_begin
 
-	def handle_sprite_end(name) :
-		Bytes = ""
-		RowNr = 0
-		for Row in parse_state["content"].split() :
-			RowNr += 1
-			assert len(Row) == parse_state["attrs"]["rowbytes"] * 8, "wrong length for row"
-			ThisByte = None
-			Col = 0
-			while True :
-				if Col % 8 == 0 :
-					if Col != 0 :
-						Bytes += chr(ThisByte)
-					#end if
-					if Col == len(Row) :
-						break
-					ThisByte = 0
-				#end if
-				ThisByte |= (Row[Col] != ".") << (7 - Col % 8)
-				Col += 1
-			#end while
-		#end for
-		assert RowNr == parse_state["attrs"]["rows"], "wrong number of rows"
-		write_op \
-		  (
-			IMG_SPRITE_ID,
-				struct.pack
-				  (
-					"<HHH",
-					parse_state["attrs"]["data_addr"],
-					parse_state["attrs"]["rows"],
-					parse_state["attrs"]["rowbytes"],
-				  )
-			+
-				Bytes
-		  )
-	#end handle_sprite_end
+    def handle_sprite_end(name) :
+        Bytes = ""
+        RowNr = 0
+        for Row in parse_state["content"].split() :
+            RowNr += 1
+            assert len(Row) == parse_state["attrs"]["rowbytes"] * 8, "wrong length for row"
+            ThisByte = None
+            Col = 0
+            while True :
+                if Col % 8 == 0 :
+                    if Col != 0 :
+                        Bytes += chr(ThisByte)
+                    #end if
+                    if Col == len(Row) :
+                        break
+                    ThisByte = 0
+                #end if
+                ThisByte |= (Row[Col] != ".") << (7 - Col % 8)
+                Col += 1
+            #end while
+        #end for
+        assert RowNr == parse_state["attrs"]["rows"], "wrong number of rows"
+        write_op \
+          (
+            IMG_SPRITE_ID,
+                struct.pack
+                  (
+                    "<HHH",
+                    parse_state["attrs"]["data_addr"],
+                    parse_state["attrs"]["rows"],
+                    parse_state["attrs"]["rowbytes"],
+                  )
+            +
+                Bytes
+          )
+    #end handle_sprite_end
 
-	def handle_varmap_begin(name, attrs) :
-		parse_state["attrs"] = \
-			{
-				"data_addr" : int(attrs["data_addr"]),
-				"count" : int(attrs["count"]),
-			}
-		validate_data_addr(parse_state["attrs"]["data_addr"], True)
-	#end handle_varmap_begin
+    def handle_varmap_begin(name, attrs) :
+        parse_state["attrs"] = \
+            {
+                "data_addr" : int(attrs["data_addr"]),
+                "count" : int(attrs["count"]),
+            }
+        validate_data_addr(parse_state["attrs"]["data_addr"], True)
+    #end handle_varmap_begin
 
-	def handle_varmap_end(name) :
-		Map = ""
-		for Entry in parse_state["content"].split() :
-			Domain, Range = Entry.split(":", 1)
-			Map += struct.pack("<HH", int(Domain), int(Range))
-		#end for
-		assert len(Map) == parse_state["attrs"]["count"] * 4, "varmap values don't match count"
-		write_op \
-		  (
-			IMG_VARMAP_ID,
-				struct.pack \
-				  (
-					"<HH",
-					parse_state["attrs"]["data_addr"],
-					parse_state["attrs"]["count"],
-				  )
-			+
-				Map
-		  )
-	#end handle_varmap_end
+    def handle_varmap_end(name) :
+        Map = ""
+        for Entry in parse_state["content"].split() :
+            Domain, Range = Entry.split(":", 1)
+            Map += struct.pack("<HH", int(Domain), int(Range))
+        #end for
+        assert len(Map) == parse_state["attrs"]["count"] * 4, "varmap values don't match count"
+        write_op \
+          (
+            IMG_VARMAP_ID,
+                struct.pack \
+                  (
+                    "<HH",
+                    parse_state["attrs"]["data_addr"],
+                    parse_state["attrs"]["count"],
+                  )
+            +
+                Map
+          )
+    #end handle_varmap_end
 
-	def handle_copybits(name, attrs) :
-		data_addr = get_resolvable(attrs, "data_addr")
-		validate_data_addr(data_addr, False)
-		write_op \
-		  (
-			IMG_COPYBITS_ID,
-			struct.pack
-			  (
-				"<HHHHHHHH",
-				int(attrs["options"]),
-				data_addr,
-				get_resolvable(attrs, "src_x"),
-				get_resolvable(attrs, "src_y"),
-				get_resolvable(attrs, "width"),
-				get_resolvable(attrs, "height"),
-				get_resolvable(attrs, "dst_x"),
-				get_resolvable(attrs, "dst_y"),
-			  )
-		  )
-	#end handle_copybits
+    def handle_copybits(name, attrs) :
+        data_addr = get_resolvable(attrs, "data_addr")
+        validate_data_addr(data_addr, False)
+        write_op \
+          (
+            IMG_COPYBITS_ID,
+            struct.pack
+              (
+                "<HHHHHHHH",
+                int(attrs["options"]),
+                data_addr,
+                get_resolvable(attrs, "src_x"),
+                get_resolvable(attrs, "src_y"),
+                get_resolvable(attrs, "width"),
+                get_resolvable(attrs, "height"),
+                get_resolvable(attrs, "dst_x"),
+                get_resolvable(attrs, "dst_y"),
+              )
+          )
+    #end handle_copybits
 
-	def handle_pixel(name, attrs) :
-		write_op \
-		  (
-			IMG_PIXEL_ID,
-			struct.pack
-			  (
-				"<HHHH",
-				int(attrs["options"]),
-				get_resolvable(attrs, "pt_x"),
-				get_resolvable(attrs, "pt_y"),
-				get_resolvable(attrs, "value"),
-			  )
-		  )
-	#end handle_pixel
+    def handle_pixel(name, attrs) :
+        write_op \
+          (
+            IMG_PIXEL_ID,
+            struct.pack
+              (
+                "<HHHH",
+                int(attrs["options"]),
+                get_resolvable(attrs, "pt_x"),
+                get_resolvable(attrs, "pt_y"),
+                get_resolvable(attrs, "value"),
+              )
+          )
+    #end handle_pixel
 
-	def handle_line(name, attrs) :
-		write_op \
-		  (
-			IMG_LINE_ID,
-			struct.pack
-			  (
-				"<HHHHH",
-				int(attrs["options"]),
-				get_resolvable(attrs, "pt1_x"),
-				get_resolvable(attrs, "pt1_y"),
-				get_resolvable(attrs, "pt2_x"),
-				get_resolvable(attrs, "pt2_y"),
-			  )
-		  )
-	#end handle_line
+    def handle_line(name, attrs) :
+        write_op \
+          (
+            IMG_LINE_ID,
+            struct.pack
+              (
+                "<HHHHH",
+                int(attrs["options"]),
+                get_resolvable(attrs, "pt1_x"),
+                get_resolvable(attrs, "pt1_y"),
+                get_resolvable(attrs, "pt2_x"),
+                get_resolvable(attrs, "pt2_y"),
+              )
+          )
+    #end handle_line
 
-	def handle_rect(name, attrs) :
-		write_op \
-		  (
-			IMG_RECTANGLE_ID,
-			struct.pack
-			  (
-				"<HHHHH",
-				int(attrs["options"]),
-				get_resolvable(attrs, "pt_x"),
-				get_resolvable(attrs, "pt_y"),
-				get_resolvable(attrs, "width"),
-				get_resolvable(attrs, "height"),
-			  )
-		  )
-	#end handle_rect
+    def handle_rect(name, attrs) :
+        write_op \
+          (
+            IMG_RECTANGLE_ID,
+            struct.pack
+              (
+                "<HHHHH",
+                int(attrs["options"]),
+                get_resolvable(attrs, "pt_x"),
+                get_resolvable(attrs, "pt_y"),
+                get_resolvable(attrs, "width"),
+                get_resolvable(attrs, "height"),
+              )
+          )
+    #end handle_rect
 
-	def handle_circle(name, attrs) :
-		write_op \
-		  (
-			IMG_CIRCLE_ID,
-			struct.pack
-			  (
-				"<HHHH",
-				int(attrs["options"]),
-				get_resolvable(attrs, "pt1_x"),
-				get_resolvable(attrs, "pt1_y"),
-				get_resolvable(attrs, "radius"),
-			  )
-		  )
-	#end handle_circle
+    def handle_circle(name, attrs) :
+        write_op \
+          (
+            IMG_CIRCLE_ID,
+            struct.pack
+              (
+                "<HHHH",
+                int(attrs["options"]),
+                get_resolvable(attrs, "pt1_x"),
+                get_resolvable(attrs, "pt1_y"),
+                get_resolvable(attrs, "radius"),
+              )
+          )
+    #end handle_circle
 
-	def handle_numbox(name, attrs) :
-		write_op \
-		  (
-			IMG_NUMBOX_ID,
-			struct.pack
-			  (
-				"<HHHH",
-				int(attrs["options"]),
-				get_resolvable(attrs, "pt_x"),
-				get_resolvable(attrs, "pt_y"),
-				get_resolvable(attrs, "value"),
-			  )
-		  )
-	#end handle_numbox
+    def handle_numbox(name, attrs) :
+        write_op \
+          (
+            IMG_NUMBOX_ID,
+            struct.pack
+              (
+                "<HHHH",
+                int(attrs["options"]),
+                get_resolvable(attrs, "pt_x"),
+                get_resolvable(attrs, "pt_y"),
+                get_resolvable(attrs, "value"),
+              )
+          )
+    #end handle_numbox
 
-	element_handlers = \
-		{
-			"description" : handle_description,
-			"sprite" : handle_sprite_begin,
-			"varmap" : handle_varmap_begin,
-			"copybits" : handle_copybits,
-			"pixel" : handle_pixel,
-			"line" : handle_line,
-			"rect" : handle_rect,
-			"circle" : handle_circle,
-			"numbox" : handle_numbox,
-		}
-	element_end_handlers = \
-		{
-			"sprite" : handle_sprite_end,
-			"varmap" : handle_varmap_end,
-		}
-	def handle_start_element(name, attrs) :
-		if parse_state["in_ric"] :
-			parse_state["in_tag"] = name
-			if element_end_handlers.has_key(name) :
-				parse_state["content"] = ""
-			#end if
-			element_handlers[name](name, attrs)
-		else :
-			assert name == "ric"
-			parse_state["in_ric"] = True
-		#end if
-	#end handle_start_element
+    element_handlers = \
+        {
+            "description" : handle_description,
+            "sprite" : handle_sprite_begin,
+            "varmap" : handle_varmap_begin,
+            "copybits" : handle_copybits,
+            "pixel" : handle_pixel,
+            "line" : handle_line,
+            "rect" : handle_rect,
+            "circle" : handle_circle,
+            "numbox" : handle_numbox,
+        }
+    element_end_handlers = \
+        {
+            "sprite" : handle_sprite_end,
+            "varmap" : handle_varmap_end,
+        }
+    def handle_start_element(name, attrs) :
+        if parse_state["in_ric"] :
+            parse_state["in_tag"] = name
+            if element_end_handlers.has_key(name) :
+                parse_state["content"] = ""
+            #end if
+            element_handlers[name](name, attrs)
+        else :
+            assert name == "ric"
+            parse_state["in_ric"] = True
+        #end if
+    #end handle_start_element
 
-	def handle_element_content(data) :
-		if parse_state["content"] != None :
-			parse_state["content"] += data
-		#end if
-	#end handle_element_content
+    def handle_element_content(data) :
+        if parse_state["content"] != None :
+            parse_state["content"] += data
+        #end if
+    #end handle_element_content
 
-	def handle_end_element(name) :
-		if parse_state["in_ric"] :
-			if parse_state["in_tag"] != None :
-				if element_end_handlers.has_key(name) :
-					element_end_handlers[name](name)
-				#end if
-				parse_state["in_tag"] = None
-				parse_state["content"] = None
-			else :
-				parse_state["in_ric"] = False
-			#end if
-		#end if
-	#end handle_end_element
+    def handle_end_element(name) :
+        if parse_state["in_ric"] :
+            if parse_state["in_tag"] != None :
+                if element_end_handlers.has_key(name) :
+                    element_end_handlers[name](name)
+                #end if
+                parse_state["in_tag"] = None
+                parse_state["content"] = None
+            else :
+                parse_state["in_ric"] = False
+            #end if
+        #end if
+    #end handle_end_element
 
 #begin cmd_makeric
-	parser = expat.ParserCreate()
-	parser.StartElementHandler = handle_start_element
-	parser.CharacterDataHandler = handle_element_content
-	parser.EndElementHandler = handle_end_element
-	ricfile = open(args[0], "w")
-	parser.ParseFile(sys.stdin)
-	ricfile.flush()
-	ricfile.close()
+    parser = expat.ParserCreate()
+    parser.StartElementHandler = handle_start_element
+    parser.CharacterDataHandler = handle_element_content
+    parser.EndElementHandler = handle_end_element
+    ricfile = open(args[0], "w")
+    parser.ParseFile(sys.stdin)
+    ricfile.flush()
+    ricfile.close()
 #end cmd_makeric
 
 def cmd_unric(args, opts) :
-	"""decompiles a .ric file to XML format to standard output."""
-	ricfile = open(args[0], "r")
-	xml = sys.stdout
-	xml.write("<ric>\n")
-	while True :
-		ophdr = ricfile.read(4)
-		if ophdr == "" :
-			break
-		OpSize, OpCode = struct.unpack("<HH", ophdr)
-		if OpCode == IMG_DESCRIPTION_ID :
-			assert OpSize == 8
-			Options, Width, Height = structread(ricfile, "<HHH")
-			xml.write \
-			  (
-					"    <description options=%(options)s width=%(width)s height=%(height)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(Options),
-						"width" : QuoteXMLAttr(Width),
-						"height" : QuoteXMLAttr(Height),
-					}
-			  )
-		elif OpCode == IMG_SPRITE_ID :
-			assert OpSize > 8
-			DataAddr, Rows, RowBytes = structread(ricfile, "<HHH")
-			assert (RowBytes & 1) == 0
-			NrBytes = Rows * RowBytes
-			Bytes = ricfile.read(Rows * RowBytes)
-			assert len(Bytes) == Rows * RowBytes
-			xml.write \
-			  (
-					"    <sprite data_addr=%(data_addr)s rows=%(rows)s rowbytes=%(rowbytes)s>\n"
-				%
-					{
-						"data_addr" : QuoteXMLAttr(DataAddr),
-						"rows" : QuoteXMLAttr(Rows),
-						"rowbytes" : QuoteXMLAttr(RowBytes),
-					}
-			  )
-			for RowNr in range(0, Rows) :
-				Row = Bytes[RowNr * RowBytes : (RowNr + 1) * RowBytes]
-				xml.write("        ")
-				for Col in range(0, RowBytes * 8) :
-					xml.write((".", "X")[ord(Row[Col // 8]) & (1 << 7 - Col % 8) != 0])
-				#end for
-				xml.write("\n")
-			#end for
-			xml.write("    </sprite>\n")
-		elif OpCode == IMG_VARMAP_ID :
-			assert OpSize >= 10
-			DataAddr, MapCount = structread(ricfile, "<HH")
-			MapLen = MapCount * 4
-			Map = ricfile.read(MapLen)
-			assert len(Map) == MapLen
-			xml.write \
-			  (
-					"    <varmap data_addr=%(data_addr)s count=%(count)s>\n"
-				%
-					{
-						"data_addr" : QuoteXMLAttr(DataAddr),
-						"count" : QuoteXMLAttr(MapCount),
-					}
-			  )
-			for i in range(0, MapCount) :
-				Domain, Range = struct.unpack("<HH", Map[i * 4 : (i + 1) * 4])
-				xml.write("        %d:%d\n" % (Domain, Range))
-			#end for
-			xml.write("    </varmap>\n")
-		elif OpCode == IMG_COPYBITS_ID :
-			assert OpSize == 18
-			CopyOptions, DataAddr, SrcX, SrcY, Width, Height, DstX, DstY = \
-				structread(ricfile, "<HHHHHHHH")
-			xml.write \
-			  (
-					"    <copybits options=%(options)s data_addr=%(data_addr)s"
-					" src_x=%(src_x)s src_y=%(src_y)s width=%(width)s height=%(height)s"
-					" dst_x=%(dst_x)s dst_y=%(dst_y)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"data_addr" : QuoteResolvable(DataAddr),
-						"src_x" : QuoteResolvable(SrcX),
-						"src_y" : QuoteResolvable(SrcY),
-						"width" : QuoteResolvable(Width),
-						"height" : QuoteResolvable(Height),
-						"dst_x" : QuoteResolvable(DstX),
-						"dst_y" : QuoteResolvable(DstY),
-					}
-			  )
-		elif OpCode == IMG_PIXEL_ID :
-			assert OpSize == 10
-			CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
-			xml.write \
-			  (
-					"    <pixel options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s value=%(value)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"pt_x" : QuoteResolvable(PtX),
-						"pt_y" : QuoteResolvable(PtY),
-						"value" : QuoteResolvable(Value),
-					}
-			  )
-		elif OpCode == IMG_LINE_ID :
-			assert OpSize == 12
-			CopyOptions, Pt1X, Pt1Y, Pt2X, Pt2Y = structread(ricfile, "<HHHHH")
-			xml.write \
-			  (
-					"    <line options=%(options)s pt1_x=%(pt1_x)s pt1_y=%(pt1_y)s"
-					" pt2_x=%(pt2_x)s pt2_y=%(pt2_y)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"pt1_x" : QuoteResolvable(Pt1X),
-						"pt1_y" : QuoteResolvable(Pt1Y),
-						"pt2_x" : QuoteResolvable(Pt2X),
-						"pt2_y" : QuoteResolvable(Pt2Y),
-					}
-			  )
-		elif OpCode == IMG_RECTANGLE_ID :
-			assert OpSize == 12
-			CopyOptions, PtX, PtY, Width, Height = structread(ricfile, "<HHHHH")
-			xml.write \
-			  (
-					"    <rect options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
-					" width=%(width)s height=%(height)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"pt_x" : QuoteResolvable(PtX),
-						"pt_y" : QuoteResolvable(PtY),
-						"width" : QuoteResolvable(Width),
-						"height" : QuoteResolvable(Height),
-					}
-			  )
-		elif OpCode == IMG_CIRCLE_ID : # not implemented in current firmware!
-			assert OpSize == 10
-			CopyOptions, PtX, PtY, Radius = structread(ricfile, "<HHHH")
-			xml.write \
-			  (
-					"    <circle options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
-					" radius=%(radius)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"pt_x" : QuoteResolvable(PtX),
-						"pt_y" : QuoteResolvable(PtY),
-						"radius" : QuoteResolvable(Radius),
-					}
-			  )
-		elif OpCode == IMG_NUMBOX_ID :
-			assert OpSize == 10
-			CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
-			xml.write \
-			  (
-					"    <numbox options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
-					" value=%(value)s/>\n"
-				%
-					{
-						"options" : QuoteXMLAttr(CopyOptions),
-						"pt_x" : QuoteResolvable(PtX),
-						"pt_y" : QuoteResolvable(PtY),
-						"value" : QuoteResolvable(Value),
-					}
-			  )
-		else :
-			raise RuntimeError("unrecognized opcode %04x in .ric file" % OpCode)
-		#end if
-	#end while
-	xml.write("</ric>\n")
-	xml.flush()
+    """decompiles a .ric file to XML format to standard output."""
+    ricfile = open(args[0], "r")
+    xml = sys.stdout
+    xml.write("<ric>\n")
+    while True :
+        ophdr = ricfile.read(4)
+        if ophdr == "" :
+            break
+        OpSize, OpCode = struct.unpack("<HH", ophdr)
+        if OpCode == IMG_DESCRIPTION_ID :
+            assert OpSize == 8
+            Options, Width, Height = structread(ricfile, "<HHH")
+            xml.write \
+              (
+                    "    <description options=%(options)s width=%(width)s height=%(height)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(Options),
+                        "width" : QuoteXMLAttr(Width),
+                        "height" : QuoteXMLAttr(Height),
+                    }
+              )
+        elif OpCode == IMG_SPRITE_ID :
+            assert OpSize > 8
+            DataAddr, Rows, RowBytes = structread(ricfile, "<HHH")
+            assert (RowBytes & 1) == 0
+            NrBytes = Rows * RowBytes
+            Bytes = ricfile.read(Rows * RowBytes)
+            assert len(Bytes) == Rows * RowBytes
+            xml.write \
+              (
+                    "    <sprite data_addr=%(data_addr)s rows=%(rows)s rowbytes=%(rowbytes)s>\n"
+                %
+                    {
+                        "data_addr" : QuoteXMLAttr(DataAddr),
+                        "rows" : QuoteXMLAttr(Rows),
+                        "rowbytes" : QuoteXMLAttr(RowBytes),
+                    }
+              )
+            for RowNr in range(0, Rows) :
+                Row = Bytes[RowNr * RowBytes : (RowNr + 1) * RowBytes]
+                xml.write("        ")
+                for Col in range(0, RowBytes * 8) :
+                    xml.write((".", "X")[ord(Row[Col // 8]) & (1 << 7 - Col % 8) != 0])
+                #end for
+                xml.write("\n")
+            #end for
+            xml.write("    </sprite>\n")
+        elif OpCode == IMG_VARMAP_ID :
+            assert OpSize >= 10
+            DataAddr, MapCount = structread(ricfile, "<HH")
+            MapLen = MapCount * 4
+            Map = ricfile.read(MapLen)
+            assert len(Map) == MapLen
+            xml.write \
+              (
+                    "    <varmap data_addr=%(data_addr)s count=%(count)s>\n"
+                %
+                    {
+                        "data_addr" : QuoteXMLAttr(DataAddr),
+                        "count" : QuoteXMLAttr(MapCount),
+                    }
+              )
+            for i in range(0, MapCount) :
+                Domain, Range = struct.unpack("<HH", Map[i * 4 : (i + 1) * 4])
+                xml.write("        %d:%d\n" % (Domain, Range))
+            #end for
+            xml.write("    </varmap>\n")
+        elif OpCode == IMG_COPYBITS_ID :
+            assert OpSize == 18
+            CopyOptions, DataAddr, SrcX, SrcY, Width, Height, DstX, DstY = \
+                structread(ricfile, "<HHHHHHHH")
+            xml.write \
+              (
+                    "    <copybits options=%(options)s data_addr=%(data_addr)s"
+                    " src_x=%(src_x)s src_y=%(src_y)s width=%(width)s height=%(height)s"
+                    " dst_x=%(dst_x)s dst_y=%(dst_y)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "data_addr" : QuoteResolvable(DataAddr),
+                        "src_x" : QuoteResolvable(SrcX),
+                        "src_y" : QuoteResolvable(SrcY),
+                        "width" : QuoteResolvable(Width),
+                        "height" : QuoteResolvable(Height),
+                        "dst_x" : QuoteResolvable(DstX),
+                        "dst_y" : QuoteResolvable(DstY),
+                    }
+              )
+        elif OpCode == IMG_PIXEL_ID :
+            assert OpSize == 10
+            CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
+            xml.write \
+              (
+                    "    <pixel options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s value=%(value)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "pt_x" : QuoteResolvable(PtX),
+                        "pt_y" : QuoteResolvable(PtY),
+                        "value" : QuoteResolvable(Value),
+                    }
+              )
+        elif OpCode == IMG_LINE_ID :
+            assert OpSize == 12
+            CopyOptions, Pt1X, Pt1Y, Pt2X, Pt2Y = structread(ricfile, "<HHHHH")
+            xml.write \
+              (
+                    "    <line options=%(options)s pt1_x=%(pt1_x)s pt1_y=%(pt1_y)s"
+                    " pt2_x=%(pt2_x)s pt2_y=%(pt2_y)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "pt1_x" : QuoteResolvable(Pt1X),
+                        "pt1_y" : QuoteResolvable(Pt1Y),
+                        "pt2_x" : QuoteResolvable(Pt2X),
+                        "pt2_y" : QuoteResolvable(Pt2Y),
+                    }
+              )
+        elif OpCode == IMG_RECTANGLE_ID :
+            assert OpSize == 12
+            CopyOptions, PtX, PtY, Width, Height = structread(ricfile, "<HHHHH")
+            xml.write \
+              (
+                    "    <rect options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+                    " width=%(width)s height=%(height)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "pt_x" : QuoteResolvable(PtX),
+                        "pt_y" : QuoteResolvable(PtY),
+                        "width" : QuoteResolvable(Width),
+                        "height" : QuoteResolvable(Height),
+                    }
+              )
+        elif OpCode == IMG_CIRCLE_ID : # not implemented in current firmware!
+            assert OpSize == 10
+            CopyOptions, PtX, PtY, Radius = structread(ricfile, "<HHHH")
+            xml.write \
+              (
+                    "    <circle options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+                    " radius=%(radius)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "pt_x" : QuoteResolvable(PtX),
+                        "pt_y" : QuoteResolvable(PtY),
+                        "radius" : QuoteResolvable(Radius),
+                    }
+              )
+        elif OpCode == IMG_NUMBOX_ID :
+            assert OpSize == 10
+            CopyOptions, PtX, PtY, Value = structread(ricfile, "<HHHH")
+            xml.write \
+              (
+                    "    <numbox options=%(options)s pt_x=%(pt_x)s pt_y=%(pt_y)s"
+                    " value=%(value)s/>\n"
+                %
+                    {
+                        "options" : QuoteXMLAttr(CopyOptions),
+                        "pt_x" : QuoteResolvable(PtX),
+                        "pt_y" : QuoteResolvable(PtY),
+                        "value" : QuoteResolvable(Value),
+                    }
+              )
+        else :
+            raise RuntimeError("unrecognized opcode %04x in .ric file" % OpCode)
+        #end if
+    #end while
+    xml.write("</ric>\n")
+    xml.flush()
 #end cmd_unric
 
 def cmd_start_program(args, opts) :
-	"""starts a program running."""
-	brick.start_program(args[0])
+    """starts a program running."""
+    brick.start_program(args[0])
 #end cmd_start_program
 
 def cmd_stop_program(args, opts) :
-	"""stops the currently-running program."""
-	brick.stop_program()
+    """stops the currently-running program."""
+    brick.stop_program()
 #end cmd_stop_program
 
 tones_help = \
-	"\nEach frequency:duration pair specifies a note frequency and corresponding\n" \
-	"duration in milliseconds. The frequency is in integer hertz, unless --notes\n" \
-	"is specified, in which case it is a MIDI note number (60 = middle C), which\n" \
-	"can be fractional. --tune specifies an alternative tuning for MIDI note numbers\n" \
-	"in the form notenr:frequency. If omitted, the default is 69:440 (A = 440Hz)"
+    "\nEach frequency:duration pair specifies a note frequency and corresponding\n" \
+    "duration in milliseconds. The frequency is in integer hertz, unless --notes\n" \
+    "is specified, in which case it is a MIDI note number (60 = middle C), which\n" \
+    "can be fractional. --tune specifies an alternative tuning for MIDI note numbers\n" \
+    "in the form notenr:frequency. If omitted, the default is 69:440 (A = 440Hz)"
 
 recognized_commands = \
   {
@@ -981,191 +981,191 @@ recognized_commands = \
 #
 # This whole structure is adapted from my geek_central project.
 
-	"help" :
-	  {
-		"args" : (0, 1),
-		"opts" : (),
-		"action" : cmd_help,
-		"help_usage" : "[cmd]",
-		"help_descr" : "gives help about the specified command",
-		"connect" : False,
-	  },
+    "help" :
+      {
+        "args" : (0, 1),
+        "opts" : (),
+        "action" : cmd_help,
+        "help_usage" : "[cmd]",
+        "help_descr" : "gives help about the specified command",
+        "connect" : False,
+      },
 
 # miscellaneous
 
-	"name" :
-	  {
-		"args" : (0, 1), # optional new name
-		"opts" : (),
-		"action" : cmd_name,
-		"help_usage" : "[newname]",
-		"help_descr" : "gets the existing name of the controller, or sets a new name",
-	  },
+    "name" :
+      {
+        "args" : (0, 1), # optional new name
+        "opts" : (),
+        "action" : cmd_name,
+        "help_usage" : "[newname]",
+        "help_descr" : "gets the existing name of the controller, or sets a new name",
+      },
 
-	"hostid" :
-	  {
-		"args" : 0,
-		"opts" : (),
-		"action" : cmd_hostid,
-		"help_usage" : "",
-		"help_descr" : "returns the controller's host ID",
-	  },
+    "hostid" :
+      {
+        "args" : 0,
+        "opts" : (),
+        "action" : cmd_hostid,
+        "help_usage" : "",
+        "help_descr" : "returns the controller's host ID",
+      },
 
-	"battery" :
-	  {
-		"args" : 0,
-		"opts" : (),
-		"action" : cmd_battery_level,
-		"help_usage" : "",
-		"help_descr" : "shows the battery level remaining",
-	  },
+    "battery" :
+      {
+        "args" : 0,
+        "opts" : (),
+        "action" : cmd_battery_level,
+        "help_usage" : "",
+        "help_descr" : "shows the battery level remaining",
+      },
 
 # filesystem
 
-	"df" :
-	  {
-		"args" : 0,
-		"opts" : (),
-		"action" : cmd_df,
-		"help_usage" : "",
-		"help_descr" : "shows total space available",
-	  },
+    "df" :
+      {
+        "args" : 0,
+        "opts" : (),
+        "action" : cmd_df,
+        "help_usage" : "",
+        "help_descr" : "shows total space available",
+      },
 
-	"ls" :
-	  {
-		"args" : (), # filename(s)
-		"opts" : (),
-		"action" : cmd_ls,
-		"help_usage" : "pattern [pattern...]",
-		"help_descr" :
-			"lists filenames of matching the specified pattern(s).\n"
-			"Patterns can be name.ext, name.*, *.ext or *.*",
-	  },
+    "ls" :
+      {
+        "args" : (), # filename(s)
+        "opts" : (),
+        "action" : cmd_ls,
+        "help_usage" : "pattern [pattern...]",
+        "help_descr" :
+            "lists filenames of matching the specified pattern(s).\n"
+            "Patterns can be name.ext, name.*, *.ext or *.*",
+      },
 
-	"lls" :
-	  {
-		"args" : (), # filename(s)
-		"opts" : (),
-		"action" : cmd_lls,
-		"help_usage" : "pattern [pattern...]",
-		"help_descr" :
-			"lists names and sizes of matching the specified pattern(s).\n"
-			"Patterns can be name.ext, name.*, *.ext or *.*",
-	  },
+    "lls" :
+      {
+        "args" : (), # filename(s)
+        "opts" : (),
+        "action" : cmd_lls,
+        "help_usage" : "pattern [pattern...]",
+        "help_descr" :
+            "lists names and sizes of matching the specified pattern(s).\n"
+            "Patterns can be name.ext, name.*, *.ext or *.*",
+      },
 
-	"down" :
-	  {
-		"args" : 1, # filename
-		"opts" : (),
-		"action" : cmd_download,
-		"help_usage" : "filename",
-		"help_descr" : "downloads the file from the NXT and writes it to standard output",
-	  },
+    "down" :
+      {
+        "args" : 1, # filename
+        "opts" : (),
+        "action" : cmd_download,
+        "help_usage" : "filename",
+        "help_descr" : "downloads the file from the NXT and writes it to standard output",
+      },
 
-	"up" :
-	  {
-		"args" : 1, # filename
-		"opts" : ("linear", "replace"),
-		"action" : cmd_upload,
-		"help_usage" : "filename [--linear] [--replace]",
-		"help_descr" :
-			"uploads a file to the NXT by reading from standard input,"
-			" optionally replacing any file with the same name."
-			" --linear is required, for example for .ric files.",
-	  },
+    "up" :
+      {
+        "args" : 1, # filename
+        "opts" : ("linear", "replace"),
+        "action" : cmd_upload,
+        "help_usage" : "filename [--linear] [--replace]",
+        "help_descr" :
+            "uploads a file to the NXT by reading from standard input,"
+            " optionally replacing any file with the same name."
+            " --linear is required, for example for .ric files.",
+      },
 
-	"rm" :
-	  {
-		"args" : (), # filename [filename ...]
-		"opts" : (),
-		"action" : cmd_rm,
-		"help_usage" : "filename [filename ...]",
-		"help_descr" : "deletes the files with the specified names",
-	  },
+    "rm" :
+      {
+        "args" : (), # filename [filename ...]
+        "opts" : (),
+        "action" : cmd_rm,
+        "help_usage" : "filename [filename ...]",
+        "help_descr" : "deletes the files with the specified names",
+      },
 
 # sound
 
-	"soundfile" :
-	  {
-		"args" : 1, # filename
-		"opts" : ("loop="),
-		"action" : cmd_soundfile,
-		"help_usage" : "filename [--loop=Y|N]",
-		"help_descr" : "plays a sound file with optional looping",
-	  },
+    "soundfile" :
+      {
+        "args" : 1, # filename
+        "opts" : ("loop="),
+        "action" : cmd_soundfile,
+        "help_usage" : "filename [--loop=Y|N]",
+        "help_descr" : "plays a sound file with optional looping",
+      },
 
-	"tones" :
-	  {
-		"args" : (), # frequency:duration ...
-		"opts" : ("notes", "tune="),
-		"action" : cmd_playtones,
-		"help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
-		"help_descr" : "plays one or more tones.\n" + tones_help,
-	  },
+    "tones" :
+      {
+        "args" : (), # frequency:duration ...
+        "opts" : ("notes", "tune="),
+        "action" : cmd_playtones,
+        "help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
+        "help_descr" : "plays one or more tones.\n" + tones_help,
+      },
 
-	"tonesfile" :
-	  {
-		"args" : (), # frequency:duration ...
-		"opts" : ("notes", "tune="),
-		"action" : cmd_tonesfile,
-		"help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
-		"help_descr" :
-			"writes a .rmd file to standard output that plays the specified tones"
-			" in sequence.\n" + tones_help,
-		"connect" : False,
-	  },
+    "tonesfile" :
+      {
+        "args" : (), # frequency:duration ...
+        "opts" : ("notes", "tune="),
+        "action" : cmd_tonesfile,
+        "help_usage" : "[--notes] [--tune=tuning] frequency:duration [frequency:duration ...]",
+        "help_descr" :
+            "writes a .rmd file to standard output that plays the specified tones"
+            " in sequence.\n" + tones_help,
+        "connect" : False,
+      },
 
-	"soundcvt" :
-	  {
-		"args" : 2, # infile outfile
-		"opts" : ("compressed",),
-		"action" : cmd_soundcvt,
-		"help_usage" : "infile outfile [--compressed]",
-		"help_descr" : "converts between .rso and .wav file formats with the help of sox",
-		"connect" : False,
-	  },
+    "soundcvt" :
+      {
+        "args" : 2, # infile outfile
+        "opts" : ("compressed",),
+        "action" : cmd_soundcvt,
+        "help_usage" : "infile outfile [--compressed]",
+        "help_descr" : "converts between .rso and .wav file formats with the help of sox",
+        "connect" : False,
+      },
 
 # graphics
 
-	"makeric" :
-	  {
-		"args" : 1, # outfile
-		"opts" : (),
-		"action" : cmd_makeric,
-		"help_usage" : "outfile",
-		"help_descr" : "compiles an XML description from standard input into a .ric file",
-		"connect" : False,
-	  },
+    "makeric" :
+      {
+        "args" : 1, # outfile
+        "opts" : (),
+        "action" : cmd_makeric,
+        "help_usage" : "outfile",
+        "help_descr" : "compiles an XML description from standard input into a .ric file",
+        "connect" : False,
+      },
 
-	"unric" :
-	  {
-		"args" : 1, # infile
-		"opts" : (),
-		"action" : cmd_unric,
-		"help_usage" : "infile",
-		"help_descr" : "decompiles a .ric file to XML format to standard output",
-		"connect" : False,
-	  },
+    "unric" :
+      {
+        "args" : 1, # infile
+        "opts" : (),
+        "action" : cmd_unric,
+        "help_usage" : "infile",
+        "help_descr" : "decompiles a .ric file to XML format to standard output",
+        "connect" : False,
+      },
 
 # process control
 
-	"start" :
-	  {
-		"args" : 1, # program filename
-		"opts" : (),
-		"action" : cmd_start_program,
-		"help_usage" : "filename",
-		"help_descr" : "starts the specified program running",
-	  },
+    "start" :
+      {
+        "args" : 1, # program filename
+        "opts" : (),
+        "action" : cmd_start_program,
+        "help_usage" : "filename",
+        "help_descr" : "starts the specified program running",
+      },
 
-	"stop" :
-	  {
-		"args" : 0,
-		"opts" : (),
-		"action" : cmd_stop_program,
-		"help_usage" : "",
-		"help_descr" : "stops the currently-running program",
-	  },
+    "stop" :
+      {
+        "args" : 0,
+        "opts" : (),
+        "action" : cmd_stop_program,
+        "help_usage" : "",
+        "help_descr" : "stops the currently-running program",
+      },
 
   } # recognized_commands
 
@@ -1175,75 +1175,75 @@ recognized_commands = \
 #-
 
 def mainline() :
-	if len(sys.argv) < 2 :
-		raise getopt.GetoptError("need at least one arg, the cmd to execute")
-	#end if
-	cmd = sys.argv[1]
-	cmd_entry = recognized_commands.get(cmd)
-	if cmd_entry == None :
-		raise getopt.GetoptError("unrecognized command %s" % repr(cmd))
-	#end if
-	(opts_list, args) = getopt.gnu_getopt \
-	  (
-		sys.argv[2:],
-		"",
-		cmd_entry["opts"]
-	  )
-	if type(cmd_entry["args"]) == tuple :
-		if len(cmd_entry["args"]) > 1 :
-			if \
-			  (
-					len(args) < cmd_entry["args"][0]
-				or
-					len(args) > cmd_entry["args"][1]
-			  ):
-				raise getopt.GetoptError \
-				  (
-					"%s command needs %u..%u args" % ((cmd,) + cmd_entry["args"])
-				  )
-			#end if
-		#end if
-	else :
-		if len(args) != cmd_entry["args"] :
-			raise getopt.GetoptError \
-			  (
-				"%s command needs exactly %u args" % (cmd, cmd_entry["args"])
-			  )
-		#end if
-	#end if
-	opts = {}
-	multi_opts = frozenset(cmd_entry.get("multivalued", ()))
-	for keyword, value in opts_list :
-		if keyword[:2] == "--" :
-			keyword = keyword[2:]
-			if keyword in multi_opts :
-				values = opts.get(keyword, [])
-				values.append(value)
-				opts[keyword] = values
-			else :
-				opts[keyword] = value
-			#end if
-		#end if
-	#end for
-	required_opts = cmd_entry.get("required")
-	if required_opts != None :
-		missing = set(required_opts) - set(opts.keys())
-		if len(missing) != 0 :
-			raise getopt.GetoptError \
-			  (
-				"%s command needs option(s) %s" % (cmd, ",".join(tuple(missing)))
-			  )
-		#end if
-	#end if
-	if cmd_entry.get("connect", True) :
-		global brick, sock
-		sock = nxt.locator.find_one_brick()
-		brick = sock.connect()
-	#end if
-	cmd_entry["action"](args, opts) # can raise exceptions
+    if len(sys.argv) < 2 :
+        raise getopt.GetoptError("need at least one arg, the cmd to execute")
+    #end if
+    cmd = sys.argv[1]
+    cmd_entry = recognized_commands.get(cmd)
+    if cmd_entry == None :
+        raise getopt.GetoptError("unrecognized command %s" % repr(cmd))
+    #end if
+    (opts_list, args) = getopt.gnu_getopt \
+      (
+        sys.argv[2:],
+        "",
+        cmd_entry["opts"]
+      )
+    if type(cmd_entry["args"]) == tuple :
+        if len(cmd_entry["args"]) > 1 :
+            if \
+              (
+                    len(args) < cmd_entry["args"][0]
+                or
+                    len(args) > cmd_entry["args"][1]
+              ):
+                raise getopt.GetoptError \
+                  (
+                    "%s command needs %u..%u args" % ((cmd,) + cmd_entry["args"])
+                  )
+            #end if
+        #end if
+    else :
+        if len(args) != cmd_entry["args"] :
+            raise getopt.GetoptError \
+              (
+                "%s command needs exactly %u args" % (cmd, cmd_entry["args"])
+              )
+        #end if
+    #end if
+    opts = {}
+    multi_opts = frozenset(cmd_entry.get("multivalued", ()))
+    for keyword, value in opts_list :
+        if keyword[:2] == "--" :
+            keyword = keyword[2:]
+            if keyword in multi_opts :
+                values = opts.get(keyword, [])
+                values.append(value)
+                opts[keyword] = values
+            else :
+                opts[keyword] = value
+            #end if
+        #end if
+    #end for
+    required_opts = cmd_entry.get("required")
+    if required_opts != None :
+        missing = set(required_opts) - set(opts.keys())
+        if len(missing) != 0 :
+            raise getopt.GetoptError \
+              (
+                "%s command needs option(s) %s" % (cmd, ",".join(tuple(missing)))
+              )
+        #end if
+    #end if
+    if cmd_entry.get("connect", True) :
+        global brick, sock
+        sock = nxt.locator.find_one_brick()
+        brick = sock.connect()
+    #end if
+    cmd_entry["action"](args, opts) # can raise exceptions
 #end mainline
 
 mainline()
 if sock != None :
-	sock.close()
+    sock.close()
 #end if
