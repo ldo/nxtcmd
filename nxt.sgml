@@ -285,8 +285,8 @@ The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable>,
 arguments can be varmapped.</para></listitem></varlistentry>
 
 <!-- <varlistentry><term><literal>&lt;circle  options="0"</literal>
-<literal>pt_x=</literal><replaceable>pt_x</replaceable> 
-<literal>pt_y=</literal><replaceable>pt_y</replaceable> 
+<literal>pt_x=</literal><replaceable>pt_x</replaceable>
+<literal>pt_y=</literal><replaceable>pt_y</replaceable>
 <literal>radius=</literal><replaceable>radius</replaceable><literal>/&gt;</literal></term>
 <listitem><para>Outlines a circle with the specified centre and radius.
 The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable> and
@@ -294,8 +294,8 @@ The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable> and
 </varlistentry> -->
 
 <varlistentry><term><literal>&lt;numbox options="0"</literal>
-<literal>pt_x=</literal><replaceable>pt_x</replaceable> 
-<literal>pt_y=</literal><replaceable>pt_y</replaceable> 
+<literal>pt_x=</literal><replaceable>pt_x</replaceable>
+<literal>pt_y=</literal><replaceable>pt_y</replaceable>
 <literal>value=</literal><replaceable>value</replaceable><literal>/&gt;</literal></term>
 <listitem><para>Displays <replaceable>value</replaceable> as a decimal integer string
 at the specified location. The <replaceable>pt_x</replaceable>, <replaceable>pt_y</replaceable>
